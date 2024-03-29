@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:prsample/filters.dart';
 // import 'package:tapioca/tapioca.dart';
 import 'package:video_editor/video_editor.dart';
 import 'local_reel.dart';
@@ -42,13 +43,12 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
   }
 
   String customImagePaths = '';
+  int totalImages = 0;
 
   void convertImagetoVideo() async {
     Directory directory = await getTemporaryDirectory();
     String Base_path = directory.path;
 
-    String audio_path = Base_path + 'stomps.mp3';
-    String video_path = Base_path + 'milan.mp4';
     String output_path = Base_path + '/${DateTime.now().day.toString()}}.mp4';
 
     // Below command to rename and create a copy of a video
@@ -81,7 +81,7 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
         " -r 30 " +
         output_path;
 
-    await FFmpegKit.execute(command).then((session) async {
+    await FFmpegKit.execute(generalCommand).then((session) async {
       ReturnCode? variable = await session.getReturnCode();
 
       if (variable?.isValueSuccess() == true) {
@@ -127,6 +127,7 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
       } else {
         print(
             'Video conversion failed with return code: ${session.getAllLogs()})}');
+        print("Total number of images selected is : ${totalImageSelected}");
         List<Log> list = await session.getAllLogs();
         for (int i = 0; i < list.length; i++) {
           print(list[i].getMessage());
@@ -158,19 +159,19 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
       ImagePicker imagePicker = ImagePicker();
       List<XFile> imageesss = await imagePicker.pickMultiImage();
       print(imageesss.first.path);
-      // FilePickerResult? result = await FilePicker.platform.pickFiles(
-      //   allowMultiple: true,
-      //   type: FileType.image,
-      // );
 
       if (!imageesss.isEmpty) {
+        totalImages = imageesss.length;
+        totalImageSelected = totalImages;
         images = imageesss;
         print(images[0]);
+        writingCustomImagePaths(imageesss.length,imageesss);
         for (int i = 0; i < images.length; i++) {
           // customImagePaths += images
           customImagePaths =
               customImagePaths + "-loop 1 -i " + images[i].path + " ";
         }
+        // Before the function is called we have to get the number of images selected by user which is written above
         convertImagetoVideo();
       } else if (imageesss.isEmpty) {
         setState(() {
