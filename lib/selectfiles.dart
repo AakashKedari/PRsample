@@ -2,22 +2,26 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter/ffmpeg_session.dart';
 import 'package:ffmpeg_kit_flutter/ffprobe_kit.dart';
 import 'package:ffmpeg_kit_flutter/log.dart';
 import 'package:ffmpeg_kit_flutter/return_code.dart';
+import 'package:ffmpeg_kit_flutter/statistics.dart';
 import 'package:file_picker/file_picker.dart';
-// import 'package:file_picker/file_picker.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:gallery_saver/gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:logger/logger.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:prsample/filters.dart';
-// import 'package:tapioca/tapioca.dart';
+import 'package:prsample/tapioca.dart';
+import 'package:tapioca/tapioca.dart';
 import 'package:video_editor/video_editor.dart';
+import 'package:video_player/video_player.dart';
 import 'local_reel.dart';
-// import 'package:video_editor/video_editor.dart';
-import 'package:path_provider/path_provider.dart';
 
 class SelectImageScreen extends StatefulWidget {
   const SelectImageScreen({super.key});
@@ -42,164 +46,134 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
     }
   }
 
-  int numberOfImages = 0;
   List<XFile> imagePath = [];
+  String customImagePaths = '';
+  late Directory directory;
 
   void pickImages() async {
+    directory = await getTemporaryDirectory();
     isLoading = true;
     setState(() {});
-    List<XFile> images = [];
 
     try {
       ImagePicker imagePicker = ImagePicker();
       List<XFile> imageesss = await imagePicker.pickMultiImage();
-      print(imageesss.first.path);
-      imagePath = imageesss;
 
       if (!imageesss.isEmpty) {
+        imagePath = imageesss;
 
-        totalImageSelected = imageesss.length;
-        images = imageesss;
-        print(images[0]);
-        writingCustomImagePaths(imageesss.length,imageesss);
-        for (int i = 0; i < images.length; i++) {
-          // customImagePaths += images
-          customImagePaths =
-              customImagePaths + "-loop 1 -i " + images[i].path + " ";
-        }
         // Before the function is called we have to get the number of images selected by user which is written above
         convertImagetoVideo();
       } else if (imageesss.isEmpty) {
         setState(() {
-          print("Nothing Selected");
           ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text("Nothing Selected")));
+              .showSnackBar(const SnackBar(content: Text("Nothing Selected")));
           isLoading = false;
         });
       }
     } catch (e) {
-      print("@@@@@@@@@@@@@@@@@@@@@Error picking images: $e");
+      print("Error picking images: $e");
     }
-
-    // return images;
   }
+
   void convertImagetoVideo() async {
     Directory directory = await getTemporaryDirectory();
-    String Base_path = directory.path;
-    String output_path = Base_path + '/${DateTime.now().day.toString()}}.mp4';
-    String outputmarg = '/storage/emulated/0/Download/ram.mp4';
+    String output = '${directory.path}/korean.mp4';
 
     // Below command to rename and create a copy of a video
     // String  commandtoExecute = '-i ${video_path} -c:v mpeg4 ${output_path}';
 
-    String command = "-hide_banner -y " +
-        customImagePaths +
-        "-filter_complex " +
-        "\"[0:v]setpts=PTS-STARTPTS,scale=w='if(gte(iw/ih,640/427),min(iw,640),-1)':h='if(gte(iw/ih,640/427),-1,min(ih,427))',scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=sar=1/1,split=2[stream1out1][stream1out2];" +
-        "[1:v]setpts=PTS-STARTPTS,scale=w='if(gte(iw/ih,640/427),min(iw,640),-1)':h='if(gte(iw/ih,640/427),-1,min(ih,427))',scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=sar=1/1,split=2[stream2out1][stream2out2];" +
-        "[2:v]setpts=PTS-STARTPTS,scale=w='if(gte(iw/ih,640/427),min(iw,640),-1)':h='if(gte(iw/ih,640/427),-1,min(ih,427))',scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=sar=1/1,split=2[stream3out1][stream3out2];" +
-        "[stream1out1]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=3,select=lte(n\\,90)[stream1overlaid];" +
-        "[stream1out2]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30)[stream1ending];" +
-        "[stream2out1]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=2,select=lte(n\\,60)[stream2overlaid];" +
-        "[stream2out2]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30),split=2[stream2starting][stream2ending];" +
-        "[stream3out1]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=2,select=lte(n\\,60)[stream3overlaid];" +
-        "[stream3out2]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30)[stream3starting];" +
-        "[stream2starting][stream1ending]blend=all_expr='if(gte(X,(W/2)*T/1)*lte(X,W-(W/2)*T/1),B,A)':shortest=1[stream2blended];" +
-        "[stream3starting][stream2ending]blend=all_expr='if(gte(X,(W/2)*T/1)*lte(X,W-(W/2)*T/1),B,A)':shortest=1[stream3blended];" +
-        "[stream1overlaid][stream2blended][stream2overlaid][stream3blended][stream3overlaid]concat=n=5:v=1:a=0,scale=w=640:h=424,format=" +
-        "yuv420p" +
-        "[video]\"" +
-        " -map [video] -fps_mode cfr " +
-        "" +
-        "-c:v " +
-        "mpeg4" +
-        " -r 30 " +
-        output_path;
+    // String command = "-hide_banner -y " +
+    //     customImagePaths +
+    //     "-filter_complex " +
+    //     "\"[0:v]setpts=PTS-STARTPTS,scale=w='if(gte(iw/ih,640/427),min(iw,640),-1)':h='if(gte(iw/ih,640/427),-1,min(ih,427))',scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=sar=1/1,split=2[stream1out1][stream1out2];" +
+    //     "[1:v]setpts=PTS-STARTPTS,scale=w='if(gte(iw/ih,640/427),min(iw,640),-1)':h='if(gte(iw/ih,640/427),-1,min(ih,427))',scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=sar=1/1,split=2[stream2out1][stream2out2];" +
+    //     "[2:v]setpts=PTS-STARTPTS,scale=w='if(gte(iw/ih,640/427),min(iw,640),-1)':h='if(gte(iw/ih,640/427),-1,min(ih,427))',scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=sar=1/1,split=2[stream3out1][stream3out2];" +
+    //     "[stream1out1]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=3,select=lte(n\\,90)[stream1overlaid];" +
+    //     "[stream1out2]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30)[stream1ending];" +
+    //     "[stream2out1]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=2,select=lte(n\\,60)[stream2overlaid];" +
+    //     "[stream2out2]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30),split=2[stream2starting][stream2ending];" +
+    //     "[stream3out1]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=2,select=lte(n\\,60)[stream3overlaid];" +
+    //     "[stream3out2]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30)[stream3starting];" +
+    //     "[stream2starting][stream1ending]blend=all_expr='if(gte(X,(W/2)*T/1)*lte(X,W-(W/2)*T/1),B,A)':shortest=1[stream2blended];" +
+    //     "[stream3starting][stream2ending]blend=all_expr='if(gte(X,(W/2)*T/1)*lte(X,W-(W/2)*T/1),B,A)':shortest=1[stream3blended];" +
+    //     "[stream1overlaid][stream2blended][stream2overlaid][stream3blended][stream3overlaid]concat=n=5:v=1:a=0,scale=w=640:h=424,format=" +
+    //     "yuv420p" +
+    //     "[video]\"" +
+    //     " -map [video] -fps_mode cfr " +
+    //     "" +
+    //     "-c:v " +
+    //     "mpeg4" +
+    //     " -r 30 " +
+    //     output;
 
-    String command2 = "-hide_banner -y ";
+    String genCommand =
+        generalCommand(imagePath.length, imagePath, directory.path);
 
-// Iterate over each image stream
-    for (int i = 0; i < numberOfImages; i++) {
-
-      String imageStream = "-i " + imagePath[i].path + " ";
-      String streamLabel = "[input" + i.toString() + ":v]";
-      String processingFilters = "setpts=PTS-STARTPTS,scale=w='if(gte(iw/ih,640/427),min(iw,640),-1)':h='if(gte(iw/ih,640/427),-1,min(ih,427))'," +
-          "scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=sar=1/1,split=2[stream" + i.toString() + "out1][stream" + i.toString() + "out2];" +
-          "[stream" + i.toString() + "out1]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,";
-
-      // Determine trimming and selection duration based on stream index
-      String trimDuration;
-      if (i == 0) {
-        trimDuration = "3";
-      } else {
-        trimDuration = "2";
-      }
-
-      // Add trimming and selection filters
-      processingFilters += "trim=duration=" + trimDuration + ",select=lte(n\\," + ((i + 1) * 30).toString() + ")";
-
-      if (i < numberOfImages - 1) {
-        processingFilters += "[stream" + i.toString() + "overlaid];";
-      } else {
-        processingFilters += "[stream" + i.toString() + "ending];";
-      }
-
-      command2 += imageStream + streamLabel + processingFilters;
-    }
-
-// Combine all streams and set output options
-    command2 += "concat=n=" + numberOfImages.toString() + ":v=1:a=0,scale=w=640:h=424,format=yuv420p[video]\" -map [video] -fps_mode cfr " +
-        "-c:v mpeg4 -r 30 " +
-        outputmarg;
-
-
-    await FFmpegKit.execute(command2).then((session) async {
+    Future.delayed(const Duration(seconds: 2));
+    await FFmpegKit.execute(
+      genCommand,
+    ).then((session) async {
       ReturnCode? variable = await session.getReturnCode();
+
+      List<Statistics> statistics =
+          await (session as FFmpegSession).getStatistics();
+
+      for (int k = 0; k < statistics.length; k++) {
+        print(statistics[k].getSpeed());
+      }
 
       if (variable?.isValueSuccess() == true) {
         print('Video conversion successful');
 
         // final path = output_path;
-        Future.delayed(const Duration(seconds: 2)).then((value) {
+        Future.delayed(const Duration(seconds: 1)).then((value) {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => VideoScreen('${directory.path}/korean.mp4')));
           setState(() {
             isLoading = false;
           });
           try {
-            print('now Play');
-            // final tapiocaBalls = [
-            //   TapiocaBall.filter(Filters.pink, 0.2),
-            //   TapiocaBall.textOverlay("text", 100, 10, 100, Color(0xffffc0cb)),
-            // ];
-            print("will start");
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => VideoScreen(output_path)));
+            print('now Tapioca');
+            final tapiocaBalls = [
+              TapiocaBall.filter(Filters.pink, 0.2),
+              TapiocaBall.textOverlay("text", 100, 10, 100, Color(0xffffc0cb)),
+            ];
+            final cup = Cup(Content(output), tapiocaBalls);
+            cup.suckUp('${directory.path}/japan.mp4').then((_) {
+              GallerySaver.saveVideo('${directory.path}/japan.mp4')
+                  .then((bool? success) {
+                print(success.toString());
+              });
+              print("Tapioca Applied Hurray");
 
-            // Navigator.pushReplacement(context, Video)
-            // _navigateToVideoScreen(output_path);
-            // final cup = Cup(Content(output_path), tapiocaBalls);
-            // cup.suckUp(output_path).then((_) async {
-            //   print("finished");
-            //   setState(() {
-            //
-            //   });
-            //   print('Probably edited video path $path');
-
-            // Navigator.push(context,
-            //   MaterialPageRoute(builder: (context) =>
-            //       VideoScreen(path)),
-            // );
-            //
-            // }).catchError((e) {
-            //   print('Got error: $e');
-            // });
+              // Navigator.push(
+              //     context,
+              //     MaterialPageRoute(
+              //         builder: (_) =>
+              //             VideoScreen('${directory.path}/japan.mp4')));
+            });
           } catch (e) {
             print(e.toString());
           }
         });
       } else {
-        print(
-            'Video conversion failed with return code: ${session.getAllLogs()})}');
-        print("Total number of images selected is : ${totalImageSelected}");
+        setState(() {
+          isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(imagePath.length == 1
+                ? "Select Multiple Images"
+                : "Operation Failed")));
+        if (mounted)
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (_) => const SelectImageScreen()));
+        if (kDebugMode) {
+          print(
+              'Video conversion failed with return code: ${session.getAllLogs()})}');
+        }
         List<Log> list = await session.getAllLogs();
         for (int i = 0; i < list.length; i++) {
           print(list[i].getMessage());
@@ -210,70 +184,28 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
     });
   }
 
-  var loggerNoStack = Logger(
-    printer: PrettyPrinter(methodCount: 0),
-  );
   void videoInfo() {
     FFprobeKit.getMediaInformationAsync(
-        '/storage/emulated/0/Download/owner2.mp4', (session) async {
-      final information = (await (session).getMediaInformation())!;
-      loggerNoStack.t(information.getAllProperties());
+        '/storage/emulated/0/unico Connect/VID-20230204-WA0004.mp4',
+        (session) async {
+      final information = (session).getMediaInformation()!;
+      var logger = Logger();
+      logger.d(information.getAllProperties());
       setState(() {});
     });
   }
 
+  void applyPinkColorEffect() async {
+    // Input and output paths
+    final String inputPath = '/storage/emulated/0/Download/banger.mp4';
+    final String outputPath = '/storage/emulated/0/Download/banger_pink.mp4';
 
+    // Command to apply pink color effect
+    final String command =
+        '-i $inputPath -vf colorbalance=rs=0.8:gs=0.2 $outputPath';
 
-  List<String> _selectedFiles = [];
-
-  Future<void> pickFiles() async {
-    try {
-      FilePickerResult? pickedFiles = await FilePicker.platform.pickFiles(
-        allowMultiple: true,
-      );
-
-      if (pickedFiles != null) {
-        List<String> paths =
-            pickedFiles.files.map((file) => file.path!).toList();
-
-        // Check if exactly two files are selected
-        if (paths.length != 2) {
-          print('Please select exactly two files for merging.');
-          return;
-        }
-
-        // Check if one file is audio and the other is video
-        bool hasAudioFile = paths.any((path) =>
-            path.toLowerCase().endsWith('.mp3') ||
-            path.toLowerCase().endsWith('.aac'));
-        bool hasVideoFile =
-            paths.any((path) => path.toLowerCase().endsWith('.mp4'));
-        if (!hasAudioFile || !hasVideoFile) {
-          print(
-              'Please select one audio file (.mp3 or .aac) and one video file (.mp4) for merging.');
-          return;
-        }
-
-        setState(() {
-          _selectedFiles = paths;
-        });
-        // Below command to replace a video's sound
-
-        String commandtoExecute = '-i ${_selectedFiles[0]} -i ${_selectedFiles[1]} -c copy /storage/emulated/0/Download/${Random().nextInt(100)}.mp4';
-        await FFmpegKit.execute(commandtoExecute).then((session) async {
-          ReturnCode? variable = await session.getReturnCode();
-
-          if (variable?.isValueSuccess() == true) {
-            print('Video conversion successful');
-            Navigator.push(context, MaterialPageRoute(builder: (_) => VideoScreen('/storage/emulated/0/Download/merger.mp4')));
-          } else {
-            print('No files selected.');
-          }
-        });
-      }
-    } catch (e) {
-      print('Error picking files: $e');
-    }
+    // Execute FFmpeg command
+    await FFmpegKit.execute(command);
   }
 
   bool isLoading = false;
@@ -301,8 +233,21 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
                     child: const Text("Image Collage"),
                   ),
                   ElevatedButton(
-                    onPressed: pickFiles,
-                    child: const Text("Add audio to video"),
+                    onPressed: () {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => TapiocaTry()));
+                    },
+                    child: const Text("Tapioca try"),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      videoInfo();
+                    },
+                    child: const Text("Media Info"),
+                  ),
+                  ElevatedButton(
+                    onPressed: applyPinkColorEffect,
+                    child: const Text("Pink Effect"),
                   ),
                 ],
               ),
@@ -340,7 +285,7 @@ class _VideoEditorState extends State<VideoEditor> {
   final _isExporting = ValueNotifier<bool>(false);
   final double height = 60;
 
-  late final VideoEditorController _controller = VideoEditorController.file(
+  late VideoEditorController _controller = VideoEditorController.file(
     widget.file,
     minDuration: const Duration(seconds: 1),
     maxDuration: const Duration(seconds: 20),
@@ -352,12 +297,16 @@ class _VideoEditorState extends State<VideoEditor> {
     _controller
         .initialize(aspectRatio: 9 / 16)
         .then((_) => setState(() {
-              Timer.periodic(Duration(seconds: 1), (time) {
+              Timer.periodic(const Duration(seconds: 1), (time) {
                 // duration.inMinutes.remainder(60).toString().padLeft(2, '0'),
-                print(
-                    'starttrim##################${_controller.startTrim.inSeconds}');
-                print(
-                    'endtrim##################${_controller.endTrim.inSeconds}');
+                if (kDebugMode) {
+                  print(
+                      'starttrim##################${_controller.startTrim.inSeconds}');
+                }
+                if (kDebugMode) {
+                  print(
+                      'endtrim##################${_controller.endTrim.inSeconds}');
+                }
               });
             }))
         .catchError((error) {
@@ -373,6 +322,45 @@ class _VideoEditorState extends State<VideoEditor> {
     _controller.dispose();
     // ExportService.dispose();
     super.dispose();
+  }
+
+  Future<void> pickAudioFile() async {
+    try {
+      FilePickerResult? pickedFiles = await FilePicker.platform.pickFiles(
+        allowMultiple: false,
+      );
+
+      if (pickedFiles != null) {
+        List<String> paths =
+        pickedFiles.files.map((file) => file.path!).toList();
+        String audioFilePath = paths[0];
+
+        // Below command to replace a video's sound
+
+        String commandtoExecute =
+            '-i ${widget.file.path} -i ${audioFilePath} -c copy /storage/emulated/0/Download/audicar.mp4';
+        await FFmpegKit.execute(commandtoExecute).then((session) async {
+          ReturnCode? variable = await session.getReturnCode();
+
+          if (variable?.isValueSuccess() == true) {
+            print('Video conversion successful');
+            setState(() {
+              _controller = VideoEditorController.file(File('/storage/emulated/0/Download/audicar.mp4'),minDuration: Duration(seconds: 1),maxDuration: Duration(seconds: 20));
+              _controller
+                  .initialize(aspectRatio: 9 / 16)
+                  .then((_) => setState(() {
+
+              }));
+            });
+
+          } else {
+            print('No files selected.');
+          }
+        });
+      }
+    } catch (e) {
+      print('Error picking files: $e');
+    }
   }
 
   void _exportVideo() async {
@@ -494,8 +482,8 @@ class _VideoEditorState extends State<VideoEditor> {
                                   margin: const EdgeInsets.only(top: 10),
                                   child: Column(
                                     children: [
-                                      Center(
-                                        child: Text('Trim'),
+                                      const Center(
+                                        child: Text('Trim',style: TextStyle(color: Colors.white),),
                                       ),
                                       // const TabBar(
                                       //   tabs: [
@@ -549,7 +537,7 @@ class _VideoEditorState extends State<VideoEditor> {
                                       valueListenable: _exportingProgress,
                                       builder: (_, double value, __) => Text(
                                         "Exporting video ${(value * 100).ceil()}%",
-                                        style: const TextStyle(fontSize: 12),
+                                        style: const TextStyle(fontSize: 12,color: Colors.white),
                                       ),
                                     ),
                                   ),
@@ -569,7 +557,7 @@ class _VideoEditorState extends State<VideoEditor> {
   }
 
   Widget _topNavBar() {
-    TextEditingController textEditingController = TextEditingController();
+   
     return SafeArea(
       child: SizedBox(
         height: height,
@@ -590,28 +578,29 @@ class _VideoEditorState extends State<VideoEditor> {
               indent: 22,
               color: Colors.white,
             ),
-            Expanded(
-              child: IconButton(
-                onPressed: () =>
-                    _controller.rotate90Degrees(RotateDirection.left),
-                icon: const Icon(
-                  Icons.rotate_left,
-                  color: Colors.white,
-                ),
-                tooltip: 'Rotate unclockwise',
-              ),
-            ),
-            Expanded(
-              child: IconButton(
-                onPressed: () =>
-                    _controller.rotate90Degrees(RotateDirection.right),
-                icon: const Icon(
-                  Icons.rotate_right,
-                  color: Colors.white,
-                ),
-                tooltip: 'Rotate clockwise',
-              ),
-            ),
+            Expanded(child: IconButton(onPressed: pickAudioFile, icon: Icon(Icons.audiotrack,color: Colors.white,))),
+            // Expanded(
+            //   child: IconButton(
+            //     onPressed: () =>
+            //         _controller.rotate90Degrees(RotateDirection.left),
+            //     icon: const Icon(
+            //       Icons.rotate_left,
+            //       color: Colors.white,
+            //     ),
+            //     tooltip: 'Rotate unclockwise',
+            //   ),
+            // ),
+            // Expanded(
+            //   child: IconButton(
+            //     onPressed: () =>
+            //         _controller.rotate90Degrees(RotateDirection.right),
+            //     icon: const Icon(
+            //       Icons.rotate_right,
+            //       color: Colors.white,
+            //     ),
+            //     tooltip: 'Rotate clockwise',
+            //   ),
+            // ),
             // Expanded(
             //   child: IconButton(
             //     onPressed: () =>
@@ -632,7 +621,7 @@ class _VideoEditorState extends State<VideoEditor> {
             ),
             Expanded(
                 child: TextButton(
-              child: Text("Save"),
+              child: const Text("Save"),
               onPressed: () async {
                 String command =
                     '-i ${widget.file.path} -ss ${_controller.startTrim.inSeconds} -t ${_controller.endTrim.inSeconds - _controller.startTrim.inSeconds} -c copy /storage/emulated/0/Download/${DateTime.now().microsecond}trim.mp4';
@@ -640,20 +629,20 @@ class _VideoEditorState extends State<VideoEditor> {
                   ReturnCode? variable = await session.getReturnCode();
 
                   if (variable?.isValueSuccess() == true) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                         content: Text(
                             "Video Trimmed in Local Storage in Downloads")));
                     Navigator.pushReplacement(context,
                         MaterialPageRoute(builder: (_) => SelectImageScreen()));
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Some Error Occured")));
+                        const SnackBar(content: Text("Some Error Occurred")));
                     List<Log> errors = await session.getAllLogs();
                     for (int j = 0; j < errors.length; j++) {
                       print(errors[j].getMessage());
                     }
                     Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (_) => SelectImageScreen()));
+                        MaterialPageRoute(builder: (_) => const SelectImageScreen()));
                   }
                 });
                 // showDialog(context: context, builder: (context){

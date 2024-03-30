@@ -2,19 +2,14 @@ import 'dart:io';
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter/ffprobe_kit.dart';
 import 'package:ffmpeg_kit_flutter/log.dart';
-import 'package:ffmpeg_kit_flutter/media_information_session.dart';
 import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
+
 import 'package:prsample/selectfiles.dart';
 import 'package:video_player/video_player.dart';
 // import 'package:tapioca/tapioca.dart';
 import 'package:logger/logger.dart';
 // import '../select_files/selectfiles.dart';
-
-
 
 class VideoScreen extends StatefulWidget {
   final String path;
