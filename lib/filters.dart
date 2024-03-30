@@ -71,38 +71,44 @@ String generalCommand = "-hide_banner -y " +
     " -r 30 " +
     output_path;
 
-
-// Try at home please today itself
-String command = "-hide_banner -y ";
+String genericFunction(int numberOfStreams){
+  // Try at home please today itself
+  String command = "-hide_banner -y ";
 
 // Iterate over each image stream
-for (int i = 0; i < numberOfStreams; i++) {
-String imageStream = "[input" + i + ":v]";
-String processingFilters = "setpts=PTS-STARTPTS,scale=w='if(gte(iw/ih,640/427),min(iw,640),-1)':h='if(gte(iw/ih,640/427),-1,min(ih,427))'," +
-"scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=sar=1/1,split=2[stream" + i + "out1][stream" + i + "out2];" +
-"[stream" + i + "out1]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,";
+  for (int i = 0; i < numberOfStreams; i++) {
+    String imageStream = "[input" + i.toString() + ":v]";
+    String processingFilters = "setpts=PTS-STARTPTS,scale=w='if(gte(iw/ih,640/427),min(iw,640),-1)':h='if(gte(iw/ih,640/427),-1,min(ih,427))'," +
+        "scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=sar=1/1,split=2[stream" + i.toString() + "out1][stream" + i.toString() + "out2];" +
+        "[stream" + i.toString() + "out1]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,";
 
 // Determine trimming and selection duration based on stream index
-String trimDuration;
-if (i == 0) {
-trimDuration = "3";
-} else {
-trimDuration = "2";
-}
+    String trimDuration;
+    if (i == 0) {
+      trimDuration = "3";
+    } else {
+      trimDuration = "2";
+    }
 
 // Add trimming and selection filters
-processingFilters += "trim=duration=" + trimDuration + ",select=lte(n\\," + (i + 1) * 30 + ")";
+    processingFilters += "trim=duration=" + trimDuration + ",select=lte(n\\," + (i + 1).toString() * 30 + ")";
 
-if (i < numberOfStreams - 1) {
-processingFilters += "[stream" + i + "overlaid];";
-} else {
-processingFilters += "[stream" + i + "ending];";
-}
+    if (i < numberOfStreams - 1) {
+      processingFilters += "[stream" + i.toString() + "overlaid];";
+    } else {
+      processingFilters += "[stream" + i.toString() + "ending];";
+    }
 
-command += imageStream + processingFilters;
-}
+    command += imageStream + processingFilters;
+  }
 
 // Combine all streams and set output options
-command += "concat=n=" + numberOfStreams + ":v=1:a=0,scale=w=640:h=424,format=yuv420p[video]\" -map [video] -fps_mode cfr " +
-"-c:v mpeg4 -r 30 " +
-output_path;
+  command += "concat=n=" + numberOfStreams.toString() + ":v=1:a=0,scale=w=640:h=424,format=yuv420p[video]\" -map [video] -fps_mode cfr " +
+      "-c:v mpeg4 -r 30 " +
+      output_path;
+
+  return command;
+}
+
+
+

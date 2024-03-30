@@ -42,20 +42,55 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
     }
   }
 
-  String customImagePaths = '';
-  int totalImages = 0;
+  int numberOfImages = 0;
+  List<XFile> imagePath = [];
 
+  void pickImages() async {
+    isLoading = true;
+    setState(() {});
+    List<XFile> images = [];
+
+    try {
+      ImagePicker imagePicker = ImagePicker();
+      List<XFile> imageesss = await imagePicker.pickMultiImage();
+      print(imageesss.first.path);
+      imagePath = imageesss;
+
+      if (!imageesss.isEmpty) {
+
+        totalImageSelected = imageesss.length;
+        images = imageesss;
+        print(images[0]);
+        writingCustomImagePaths(imageesss.length,imageesss);
+        for (int i = 0; i < images.length; i++) {
+          // customImagePaths += images
+          customImagePaths =
+              customImagePaths + "-loop 1 -i " + images[i].path + " ";
+        }
+        // Before the function is called we have to get the number of images selected by user which is written above
+        convertImagetoVideo();
+      } else if (imageesss.isEmpty) {
+        setState(() {
+          print("Nothing Selected");
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text("Nothing Selected")));
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print("@@@@@@@@@@@@@@@@@@@@@Error picking images: $e");
+    }
+
+    // return images;
+  }
   void convertImagetoVideo() async {
     Directory directory = await getTemporaryDirectory();
     String Base_path = directory.path;
-
     String output_path = Base_path + '/${DateTime.now().day.toString()}}.mp4';
+    String outputmarg = '/storage/emulated/0/Download/ram.mp4';
 
     // Below command to rename and create a copy of a video
-
     // String  commandtoExecute = '-i ${video_path} -c:v mpeg4 ${output_path}';
-
-    // Command for making collage of photos
 
     String command = "-hide_banner -y " +
         customImagePaths +
@@ -81,7 +116,44 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
         " -r 30 " +
         output_path;
 
-    await FFmpegKit.execute(generalCommand).then((session) async {
+    String command2 = "-hide_banner -y ";
+
+// Iterate over each image stream
+    for (int i = 0; i < numberOfImages; i++) {
+
+      String imageStream = "-i " + imagePath[i].path + " ";
+      String streamLabel = "[input" + i.toString() + ":v]";
+      String processingFilters = "setpts=PTS-STARTPTS,scale=w='if(gte(iw/ih,640/427),min(iw,640),-1)':h='if(gte(iw/ih,640/427),-1,min(ih,427))'," +
+          "scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=sar=1/1,split=2[stream" + i.toString() + "out1][stream" + i.toString() + "out2];" +
+          "[stream" + i.toString() + "out1]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,";
+
+      // Determine trimming and selection duration based on stream index
+      String trimDuration;
+      if (i == 0) {
+        trimDuration = "3";
+      } else {
+        trimDuration = "2";
+      }
+
+      // Add trimming and selection filters
+      processingFilters += "trim=duration=" + trimDuration + ",select=lte(n\\," + ((i + 1) * 30).toString() + ")";
+
+      if (i < numberOfImages - 1) {
+        processingFilters += "[stream" + i.toString() + "overlaid];";
+      } else {
+        processingFilters += "[stream" + i.toString() + "ending];";
+      }
+
+      command2 += imageStream + streamLabel + processingFilters;
+    }
+
+// Combine all streams and set output options
+    command2 += "concat=n=" + numberOfImages.toString() + ":v=1:a=0,scale=w=640:h=424,format=yuv420p[video]\" -map [video] -fps_mode cfr " +
+        "-c:v mpeg4 -r 30 " +
+        outputmarg;
+
+
+    await FFmpegKit.execute(command2).then((session) async {
       ReturnCode? variable = await session.getReturnCode();
 
       if (variable?.isValueSuccess() == true) {
@@ -150,43 +222,7 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
     });
   }
 
-  Future<List<XFile>> pickImages() async {
-    isLoading = true;
-    setState(() {});
-    List<XFile> images = [];
 
-    try {
-      ImagePicker imagePicker = ImagePicker();
-      List<XFile> imageesss = await imagePicker.pickMultiImage();
-      print(imageesss.first.path);
-
-      if (!imageesss.isEmpty) {
-        totalImages = imageesss.length;
-        totalImageSelected = totalImages;
-        images = imageesss;
-        print(images[0]);
-        writingCustomImagePaths(imageesss.length,imageesss);
-        for (int i = 0; i < images.length; i++) {
-          // customImagePaths += images
-          customImagePaths =
-              customImagePaths + "-loop 1 -i " + images[i].path + " ";
-        }
-        // Before the function is called we have to get the number of images selected by user which is written above
-        convertImagetoVideo();
-      } else if (imageesss.isEmpty) {
-        setState(() {
-          print("Nothing Selected");
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text("Nothing Selected")));
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      print("@@@@@@@@@@@@@@@@@@@@@Error picking images: $e");
-    }
-
-    return images;
-  }
 
   List<String> _selectedFiles = [];
 
