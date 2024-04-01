@@ -92,15 +92,15 @@ class _TapiocaTryState extends State<TapiocaTry> {
                 //     .asUint8List();
                 try {
                   final tapiocaBalls = [
-                    TapiocaBall.filter(Filters.pink, 0.2),
+
                     // TapiocaBall.imageOverlay(imageBitmap, 300, 300),
                     TapiocaBall.textOverlay(
-                        "text", 100, 10, 100, const Color(0xffffc0cb)),
+                        "dolbyTesing", 100, 10, 20, const Color(0xffffc0cb)),
                   ];
                   print("will start");
                   final cup = Cup(Content(_video.path), tapiocaBalls);
                   cup.suckUp(path).then((_) async {
-                    print("finished");
+                    print('Hurraaaaayyyyyyyyyyyy');
                     setState(() {
                       processPercentage = 0;
                     });
@@ -108,13 +108,16 @@ class _TapiocaTryState extends State<TapiocaTry> {
                     GallerySaver.saveVideo(path).then((bool? success) {
                       print(success.toString());
                     });
-                    final currentState = navigatorKey.currentState;
-                    if (currentState != null) {
-                      currentState.push(
-                        MaterialPageRoute(builder: (context) =>
-                            TapiVidScreen(path)),
-                      );
-                    }
+
+                      print('Inside current State');
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) =>
+                              TapiVidScreen(path)),);
+                      // Navigator.push(
+                      //   MaterialPageRoute(builder: (context) =>
+                      //       TapiVidScreen(path)),
+                      // );
+
 
                     setState(() {
                       isLoading = false;

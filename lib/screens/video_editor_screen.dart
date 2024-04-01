@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter/log.dart';
@@ -5,9 +6,11 @@ import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery_saver/gallery_saver.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:prsample/filters.dart';
 import 'package:prsample/screens/selectfiles.dart';
+import 'package:tapioca/tapioca.dart';
 import 'package:video_editor/video_editor.dart';
 
 class VideoEditor extends StatefulWidget {
@@ -96,6 +99,8 @@ class _VideoEditorState extends State<VideoEditor> {
                   .then((_) => setState(() {}));
             });
           } else {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(const SnackBar(content: Text('Operation Failed!!!')));
             final List<Log> info = await session.getAllLogs();
             for (int i = 0; i < info.length; i++) {
               print(info[i].getMessage());
@@ -106,12 +111,61 @@ class _VideoEditorState extends State<VideoEditor> {
     } catch (e) {
       print('Error picking files: $e');
     }
-
-
   }
-void applyTextOnVideo(){
 
-}
+  Future<void> applyTextOnVideo() async {
+    Directory directory = await getTemporaryDirectory();
+    String tempTextOverlayPath = '${directory.path}/${DateTime.now().microsecond.toString()}.mp4';
+    String command = '-i ${toSavePath} -vf "HelloWorld":fontsize=50:fontcolor=white:x=100:y=100 -codec:a copy ${tempTextOverlayPath}';
+    FFmpegKit.execute(command).then((session) async {
+      ReturnCode? variable = await session.getReturnCode();
+
+      if (variable?.isValueSuccess() == true) {
+        print('Video conversion successful');
+
+      setState(() {
+              _controller = VideoEditorController.file(File(tempTextOverlayPath),
+                  minDuration: const Duration(seconds: 1),
+                  maxDuration: const Duration(seconds: 20));
+              _controller
+                  .initialize(aspectRatio: 16 / 9)
+                  .then((_) => setState(() {}));
+            }); }
+      else {
+        final List<Log> info = await session.getAllLogs();
+        for (int i = 0; i < info.length; i++) {
+          print(info[i].getMessage());
+        }
+      }
+    });
+
+    // var tempDir = await getTemporaryDirectory();
+    // final path = '${tempDir.path}/${DateTime.now().millisecondsSinceEpoch}result.mp4';
+    // try {
+    //   final tapiocaBalls = [
+    //     TapiocaBall.textOverlay(
+    //         "testing", 100, 10, 100, const Color(0xffffc0cb)),
+    //   ];
+    //   final cup = Cup(Content(toSavePath), tapiocaBalls);
+    //   cup.suckUp(path).then((_) async {
+    //     GallerySaver.saveVideo(path).then((bool? success) {
+    //       print('Hurraaaaayyyyyyyyyyyy${success.toString()}');
+    //     });
+    //     setState(() {
+    //       _controller = VideoEditorController.file(File(path),
+    //           minDuration: const Duration(seconds: 1),
+    //           maxDuration: const Duration(seconds: 20));
+    //       _controller
+    //           .initialize(aspectRatio: 16 / 9)
+    //           .then((_) => setState(() {}));
+    //     });
+    //   });
+    // }
+    // catch(e){
+    //   print("&&&&&&&&&&&&###############@@@@@@@${e.toString()}");
+    // }
+  }
+
   //
   void _exportVideo() async {
     _exportingProgress.value = 0;
@@ -275,17 +329,20 @@ void applyTextOnVideo(){
                                   const EdgeInsets.symmetric(horizontal: 15),
                               child: TextFormField(
                                 controller: imgVidController,
-                                decoration:  InputDecoration(
+                                decoration: InputDecoration(
                                     hintText: 'Enter text to apply on Vid',
                                     hintStyle: TextStyle(
                                         color: Colors.grey,
                                         fontWeight: FontWeight.w100),
-                                    suffixIcon: IconButton(onPressed: (){
-                                      applyTextOnVideo();
-                                    }, icon: Icon(
-                                      Icons.add_box,
-                                      color: Colors.red,
-                                    ),),
+                                    suffixIcon: IconButton(
+                                      onPressed: () {
+                                        applyTextOnVideo();
+                                      },
+                                      icon: const Icon(
+                                        Icons.add_box,
+                                        color: Colors.red,
+                                      ),
+                                    ),
                                     filled: true,
                                     fillColor: Colors.white),
                               ),
@@ -330,8 +387,8 @@ void applyTextOnVideo(){
               height: 40,
               width: 50,
               color: Colors.red.shade500,
-              child:
-                  const Center(child: Text('Retro', style: TextStyle(color: Colors.white)))),
+              child: const Center(
+                  child: Text('Retro', style: TextStyle(color: Colors.white)))),
         ),
         InkWell(
           onTap: () async {
@@ -357,7 +414,9 @@ void applyTextOnVideo(){
               height: 40,
               width: 60,
               color: Colors.pink.shade500,
-              child: const Center(child: Text('Curves', style: TextStyle(color: Colors.white)))),
+              child: const Center(
+                  child:
+                      Text('Curves', style: TextStyle(color: Colors.white)))),
         ),
         InkWell(
           onTap: () async {
@@ -383,7 +442,8 @@ void applyTextOnVideo(){
               height: 40,
               width: 50,
               color: Colors.purple.shade500,
-              child: const Center(child: Text('Noise', style: TextStyle(color: Colors.white)))),
+              child: const Center(
+                  child: Text('Noise', style: TextStyle(color: Colors.white)))),
         ),
       ],
     );

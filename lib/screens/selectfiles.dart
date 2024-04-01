@@ -139,15 +139,15 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
                 )
                ,                const SizedBox(height: 10),
 
-                // Center(
-                //   child: ElevatedButton(
-                //     onPressed: () {
-                //       Navigator.push(context,
-                //           MaterialPageRoute(builder: (_) => TapiocaTry()));
-                //     },
-                //     child: const Text("Tapioca try"),
-                //   ),
-                // ),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => TapiocaTry()));
+                    },
+                    child: const Text("Tapioca try"),
+                  ),
+                ),
 
               ],
             )
