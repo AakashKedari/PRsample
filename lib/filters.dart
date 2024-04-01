@@ -1,10 +1,13 @@
 import 'dart:io';
-
+import 'dart:math';
+import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter/log.dart';
+import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 
-String generalCommand(int n, List<XFile> photos, String tempDirectory) {
+String generalCommand(int n, List<XFile> photos, String tempDirectory,List<int> durations) {
 
   int totalImageSelected = n;
   String manualImagePaths = '';
@@ -26,11 +29,11 @@ String generalCommand(int n, List<XFile> photos, String tempDirectory) {
     String pad = "";
     for (int k = 1; k <= totalImageSelected; k++) {
       if (k == 1) {
-        pad = "$pad[stream${k}out1]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=3,select=lte(n\\,90)[stream${k}overlaid];[stream${k}out2]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30)[stream${k}ending];";
+        pad = "$pad[stream${k}out1]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=${durations[k-1]},select=lte(n\\,90)[stream${k}overlaid];[stream${k}out2]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30)[stream${k}ending];";
       } else if (k == totalImageSelected) {
-        pad = "$pad[stream${k}out1]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=3,select=lte(n\\,90)[stream${k}overlaid];[stream${k}out2]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30)[stream${k}starting];";
+        pad = "$pad[stream${k}out1]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=${durations[k-1]},select=lte(n\\,90)[stream${k}overlaid];[stream${k}out2]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30)[stream${k}starting];";
       } else {
-        pad = "$pad[stream${k}out1]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=3,select=lte(n\\,90)[stream${k}overlaid];[stream${k}out2]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30),split=2[stream${k}starting][stream${k}ending];";
+        pad = "$pad[stream${k}out1]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=${durations[k-1]},select=lte(n\\,90)[stream${k}overlaid];[stream${k}out2]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30),split=2[stream${k}starting][stream${k}ending];";
       }
     }
     return pad;
@@ -47,10 +50,6 @@ String generalCommand(int n, List<XFile> photos, String tempDirectory) {
   String lastFilter() {
     String last = "";
     for (int i = 1; i <= totalImageSelected; i++) {
-      // if (i == totalImageSelected){
-      //   last = last + "[stream${i}overlaid]";
-      //   break;
-      // }
       if (i == 1) {
         last = "$last[stream${i}overlaid]";
       } else {
@@ -65,3 +64,44 @@ String generalCommand(int n, List<XFile> photos, String tempDirectory) {
   logger.d(command);
   return command;
 }
+
+Future<String> applyEffect(String toSavePath,int filterNumber) async {
+  // Input and output paths
+  final String inputPath = toSavePath;
+  Directory directory = await getTemporaryDirectory();
+  final String outputPath = '${directory.path}/${Random().nextInt(2000).toString()}.mp4';
+
+  // Declare a variable to hold the output path
+  String? result;
+
+  // Command to apply pink color effect
+
+  // ' -i ${inputPath} -vf colorbalance=rs=0.7:gs=0.9 ${outputPath}';
+
+  final String command = filterNumber == 1 ?
+  ' -i $inputPath -vf rgbashift=rh=-6:gh=6 -pix_fmt yuv420p $outputPath' : filterNumber == 2 ?// Retro
+" -i $inputPath -vf curves=blue='0/0 0.5/0.58 1/1' $outputPath" :  // Execute Curves
+  " -i $inputPath -vf noise=alls=60:allf=t+u $outputPath";
+  await FFmpegKit.execute(command).then((session) async {
+    ReturnCode? variable = await session.getReturnCode();
+
+    if (variable!.isValueSuccess()){
+      print('Filter applied correctly');
+      result = outputPath; // Assign the output path to the variable
+    }
+    else{
+      print('Error Occured');
+      List<Log> list = await session.getAllLogs();
+      for (int i = 0; i < list.length; i++) {
+        print(list[i].getMessage());
+      }
+      result = ''; // Assign an empty string in case of error
+    }
+
+  });
+
+  // Return the output path or an empty string
+  return result ?? 'Returning Empty String';
+}
+
+

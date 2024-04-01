@@ -6,9 +6,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:prsample/selectfiles.dart';
+import 'package:prsample/screens/selectfiles.dart';
 
-import 'colors.dart';
+import '../colors.dart';
 // import 'package:paper_reels/colors.dart';
 // import 'package:paper_reels/consts.dart';
 // import 'package:paper_reels/features/presentation/page/local_reel_screen/local_reel.dart';

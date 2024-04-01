@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:prsample/selectfiles.dart';
-import 'package:prsample/splash_screen.dart';
+import 'package:prsample/screens/splash_screen.dart';
 import 'package:prsample/themes.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarBrightness: Brightness.light,
   ));
-  if (await Permission.storage.isDenied)
+  if (await Permission.storage.isDenied) {
     Permission.storage.request();
+  }
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   runApp(const MyApp());
 }
 
@@ -29,8 +30,6 @@ class MyApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       // themeMode: ThemeMode.dark,
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
-
       home: const SplashScreen(),
     );
   }

@@ -23,7 +23,7 @@ class CustomTheme with ChangeNotifier {
         brightness: Brightness.light,
         scaffoldBackgroundColor: Colors.white,
         textTheme: GoogleFonts.poppinsTextTheme(
-          TextTheme(
+          const TextTheme(
             bodyLarge: TextStyle(
               color: drawerTextColorsLightTheme,
             ),
