@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math';
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter/ffmpeg_session.dart';
 import 'package:ffmpeg_kit_flutter/ffprobe_kit.dart';
@@ -11,17 +10,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:gallery_saver/gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:logger/logger.dart';
-import 'package:media_kit_video/media_kit_video.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:prsample/filters.dart';
 import 'package:prsample/tapioca.dart';
-import 'package:tapioca/tapioca.dart';
 import 'package:video_editor/video_editor.dart';
-import 'package:video_player/video_player.dart';
-import 'local_reel.dart';
 
 class SelectImageScreen extends StatefulWidget {
   const SelectImageScreen({super.key});
@@ -35,7 +29,7 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
 
   void _pickVideo() async {
     final XFile? file = await _picker.pickVideo(source: ImageSource.gallery);
-
+    print('&&&&&&&&&&&&&&&&&&${file?.path}');
     if (mounted && file != null) {
       Navigator.push(
         context,
@@ -78,7 +72,7 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
 
   void convertImagetoVideo() async {
     Directory directory = await getTemporaryDirectory();
-    String output = '${directory.path}/korean.mp4';
+    String output = '${directory.path}/temp_collage}.mp4';
 
     // Below command to rename and create a copy of a video
     // String  commandtoExecute = '-i ${video_path} -c:v mpeg4 ${output_path}';
@@ -108,9 +102,11 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
     //     output;
 
     String genCommand =
-        generalCommand(imagePath.length, imagePath, directory.path);
+        generalCommand(imagePath.length, imagePath, directory.path) + output;
 
-    Future.delayed(const Duration(seconds: 2));
+    print("genCommand : ${genCommand}");
+
+    Future.delayed(const Duration(seconds: 1));
     await FFmpegKit.execute(
       genCommand,
     ).then((session) async {
@@ -126,38 +122,14 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
       if (variable?.isValueSuccess() == true) {
         print('Video conversion successful');
 
-        // final path = output_path;
         Future.delayed(const Duration(seconds: 1)).then((value) {
           Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (_) => VideoScreen('${directory.path}/korean.mp4')));
+                  builder: (_) => VideoEditor(file: File(output))));
           setState(() {
             isLoading = false;
           });
-          try {
-            print('now Tapioca');
-            final tapiocaBalls = [
-              TapiocaBall.filter(Filters.pink, 0.2),
-              TapiocaBall.textOverlay("text", 100, 10, 100, Color(0xffffc0cb)),
-            ];
-            final cup = Cup(Content(output), tapiocaBalls);
-            cup.suckUp('${directory.path}/japan.mp4').then((_) {
-              GallerySaver.saveVideo('${directory.path}/japan.mp4')
-                  .then((bool? success) {
-                print(success.toString());
-              });
-              print("Tapioca Applied Hurray");
-
-              // Navigator.push(
-              //     context,
-              //     MaterialPageRoute(
-              //         builder: (_) =>
-              //             VideoScreen('${directory.path}/japan.mp4')));
-            });
-          } catch (e) {
-            print(e.toString());
-          }
         });
       } else {
         setState(() {
@@ -167,9 +139,10 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
             content: Text(imagePath.length == 1
                 ? "Select Multiple Images"
                 : "Operation Failed")));
-        if (mounted)
+        if (mounted) {
           Navigator.pushReplacement(context,
               MaterialPageRoute(builder: (_) => const SelectImageScreen()));
+        }
         if (kDebugMode) {
           print(
               'Video conversion failed with return code: ${session.getAllLogs()})}');
@@ -214,45 +187,63 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Paper Reels"),
+        title: const Text("PRs",
+            style: TextStyle(fontWeight: FontWeight.w500, fontSize: 25)),
         automaticallyImplyLeading: false,
         centerTitle: true,
       ),
       body: !isLoading
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text("Choose one of following Options"),
-                  ElevatedButton(
-                    onPressed: _pickVideo,
-                    child: const Text("Pick Video From Gallery"),
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 10),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    'Hello...',
+                    style: TextStyle(
+                        fontFamily: 'OpenSans',
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold),
                   ),
-                  ElevatedButton(
-                    onPressed: pickImages,
-                    child: const Text("Image Collage"),
+                ),
+                const SizedBox(height: 10),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    'Lets Start Creating ',
+                    style: TextStyle(fontFamily: 'OpenSans', fontSize: 20,fontWeight: FontWeight.bold),
                   ),
-                  ElevatedButton(
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      onPressed: pickImages,
+                      child: const Text("Image Collage"),
+                    ),
+                    ElevatedButton(
+                      onPressed: _pickVideo,
+                      child: const Text("Edit a Video"),
+                    ),
+                  ],
+                )
+               ,                const SizedBox(height: 10),
+
+                Center(
+                  child: ElevatedButton(
                     onPressed: () {
                       Navigator.push(context,
                           MaterialPageRoute(builder: (_) => TapiocaTry()));
                     },
                     child: const Text("Tapioca try"),
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      videoInfo();
-                    },
-                    child: const Text("Media Info"),
-                  ),
-                  ElevatedButton(
-                    onPressed: applyPinkColorEffect,
-                    child: const Text("Pink Effect"),
-                  ),
-                ],
-              ),
+                ),
+
+              ],
             )
-          : Center(
+          : const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -290,25 +281,14 @@ class _VideoEditorState extends State<VideoEditor> {
     minDuration: const Duration(seconds: 1),
     maxDuration: const Duration(seconds: 20),
   );
-
+  late String toSavePath;
   @override
   void initState() {
+    toSavePath = widget.file.path;
     super.initState();
     _controller
         .initialize(aspectRatio: 9 / 16)
-        .then((_) => setState(() {
-              Timer.periodic(const Duration(seconds: 1), (time) {
-                // duration.inMinutes.remainder(60).toString().padLeft(2, '0'),
-                if (kDebugMode) {
-                  print(
-                      'starttrim##################${_controller.startTrim.inSeconds}');
-                }
-                if (kDebugMode) {
-                  print(
-                      'endtrim##################${_controller.endTrim.inSeconds}');
-                }
-              });
-            }))
+        .then((_) => setState(() {}))
         .catchError((error) {
       // handle minimum duration bigger than video duration error
       Navigator.pop(context);
@@ -325,35 +305,50 @@ class _VideoEditorState extends State<VideoEditor> {
   }
 
   Future<void> pickAudioFile() async {
+    Directory directory = await getTemporaryDirectory();
     try {
-      FilePickerResult? pickedFiles = await FilePicker.platform.pickFiles(
-        allowMultiple: false,
-      );
+      FilePickerResult? pickedFiles = await FilePicker.platform
+          .pickFiles(allowMultiple: false, type: FileType.audio);
 
       if (pickedFiles != null) {
-        List<String> paths =
-        pickedFiles.files.map((file) => file.path!).toList();
-        String audioFilePath = paths[0];
+        // Get the first selected file
+        final file = File(pickedFiles.files.first.path!);
+
+        // Define a new file path in the cache directory
+        final String newFilePath =
+            '${directory.path}/copied_audio.mp3'; // You can change the file extension as per your audio file type
+
+        // Copy the file to the cache directory
+        await file.copy(newFilePath);
 
         // Below command to replace a video's sound
-
+        String outputPath =
+            '${directory.path}/${DateTime.now().microsecond}.mp4';
         String commandtoExecute =
-            '-i ${widget.file.path} -i ${audioFilePath} -c copy /storage/emulated/0/Download/audicar.mp4';
+            '-i ${widget.file.path} -i $newFilePath -c copy $outputPath';
+        print(commandtoExecute);
+
+        // In case if the User decides to save the temporary cache created video file,
+        //WE copy the temporary output Path to the Device's toSavePath...
+        toSavePath = outputPath;
         await FFmpegKit.execute(commandtoExecute).then((session) async {
           ReturnCode? variable = await session.getReturnCode();
 
           if (variable?.isValueSuccess() == true) {
             print('Video conversion successful');
             setState(() {
-              _controller = VideoEditorController.file(File('/storage/emulated/0/Download/audicar.mp4'),minDuration: Duration(seconds: 1),maxDuration: Duration(seconds: 20));
+              _controller = VideoEditorController.file(File(outputPath),
+                  minDuration: const Duration(seconds: 1),
+                  maxDuration: const Duration(seconds: 20));
               _controller
                   .initialize(aspectRatio: 9 / 16)
-                  .then((_) => setState(() {
-
-              }));
+                  .then((_) => setState(() {}));
             });
-
           } else {
+            final List<Log> info = await session.getAllLogs();
+            for (int i = 0; i < info.length; i++) {
+              print(info[i].getMessage());
+            }
             print('No files selected.');
           }
         });
@@ -421,8 +416,8 @@ class _VideoEditorState extends State<VideoEditor> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => false,
+    return PopScope(
+      onPopInvoked: (invoke) => false,
       child: Scaffold(
         backgroundColor: Colors.black,
         body: _controller.initialized
@@ -483,7 +478,10 @@ class _VideoEditorState extends State<VideoEditor> {
                                   child: Column(
                                     children: [
                                       const Center(
-                                        child: Text('Trim',style: TextStyle(color: Colors.white),),
+                                        child: Text(
+                                          'Trim',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
                                       ),
                                       // const TabBar(
                                       //   tabs: [
@@ -537,7 +535,8 @@ class _VideoEditorState extends State<VideoEditor> {
                                       valueListenable: _exportingProgress,
                                       builder: (_, double value, __) => Text(
                                         "Exporting video ${(value * 100).ceil()}%",
-                                        style: const TextStyle(fontSize: 12,color: Colors.white),
+                                        style: const TextStyle(
+                                            fontSize: 12, color: Colors.white),
                                       ),
                                     ),
                                   ),
@@ -557,7 +556,6 @@ class _VideoEditorState extends State<VideoEditor> {
   }
 
   Widget _topNavBar() {
-   
     return SafeArea(
       child: SizedBox(
         height: height,
@@ -578,7 +576,13 @@ class _VideoEditorState extends State<VideoEditor> {
               indent: 22,
               color: Colors.white,
             ),
-            Expanded(child: IconButton(onPressed: pickAudioFile, icon: Icon(Icons.audiotrack,color: Colors.white,))),
+            Expanded(
+                child: IconButton(
+                    onPressed: pickAudioFile,
+                    icon: const Icon(
+                      Icons.audiotrack,
+                      color: Colors.white,
+                    ))),
             // Expanded(
             //   child: IconButton(
             //     onPressed: () =>
@@ -624,7 +628,7 @@ class _VideoEditorState extends State<VideoEditor> {
               child: const Text("Save"),
               onPressed: () async {
                 String command =
-                    '-i ${widget.file.path} -ss ${_controller.startTrim.inSeconds} -t ${_controller.endTrim.inSeconds - _controller.startTrim.inSeconds} -c copy /storage/emulated/0/Download/${DateTime.now().microsecond}trim.mp4';
+                    '-i $toSavePath -ss ${_controller.startTrim.inSeconds} -t ${_controller.endTrim.inSeconds - _controller.startTrim.inSeconds} -c copy /storage/emulated/0/Download/${DateTime.now().microsecond}trim.mp4';
                 await FFmpegKit.execute(command).then((session) async {
                   ReturnCode? variable = await session.getReturnCode();
 
@@ -632,8 +636,10 @@ class _VideoEditorState extends State<VideoEditor> {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                         content: Text(
                             "Video Trimmed in Local Storage in Downloads")));
-                    Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (_) => SelectImageScreen()));
+                    Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const SelectImageScreen()));
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text("Some Error Occurred")));
@@ -641,8 +647,10 @@ class _VideoEditorState extends State<VideoEditor> {
                     for (int j = 0; j < errors.length; j++) {
                       print(errors[j].getMessage());
                     }
-                    Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (_) => const SelectImageScreen()));
+                    Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const SelectImageScreen()));
                   }
                 });
                 // showDialog(context: context, builder: (context){

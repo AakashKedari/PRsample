@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
@@ -9,7 +8,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 import 'package:video_player/video_player.dart';
-
 
 class TapiocaTry extends StatefulWidget {
   @override
@@ -21,7 +19,7 @@ class _TapiocaTryState extends State<TapiocaTry> {
   late XFile _video;
   bool isLoading = false;
   static const EventChannel _channel =
-  const EventChannel('video_editor_progress');
+  EventChannel('video_editor_progress');
   late StreamSubscription _streamSubscription;
   int processPercentage = 0;
 
@@ -70,9 +68,7 @@ class _TapiocaTryState extends State<TapiocaTry> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: navigatorKey,
-      home: Scaffold(
+    return Scaffold(
         appBar: AppBar(
           title: const Text('Plugin example app'),
         ),
@@ -132,8 +128,8 @@ class _TapiocaTryState extends State<TapiocaTry> {
                 }
               },
             )),
-      ),
-    );
+      );
+
   }
 }
 
