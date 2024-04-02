@@ -1,4 +1,7 @@
 import 'dart:async';
+// import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
+// import 'package:ffmpeg_kit_flutter/log.dart';
+// import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
@@ -6,7 +9,6 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:tapioca/tapioca.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:gallery_saver/gallery_saver.dart';
 import 'package:video_player/video_player.dart';
 
 class TapiocaTry extends StatefulWidget {
@@ -81,21 +83,17 @@ class _TapiocaTryState extends State<TapiocaTry> {
             ] ) : ElevatedButton(
               child: const Text("Pick a video and Edit it"),
               onPressed: () async {
-                print("clicked!");
+                String displayingText = "'Examples'";
                 await _pickVideo();
                 var tempDir = await getTemporaryDirectory();
                 final path = '${tempDir.path}/${DateTime.now().millisecondsSinceEpoch}result.mp4';
-                print(tempDir);
-                // final imageBitmap =
-                // (await rootBundle.load("assets/tapioca_drink.png"))
-                //     .buffer
-                //     .asUint8List();
+
                 try {
                   final tapiocaBalls = [
 
                     // TapiocaBall.imageOverlay(imageBitmap, 300, 300),
                     TapiocaBall.textOverlay(
-                        "dolbyTesing", 100, 10, 20, const Color(0xffffc0cb)),
+                        "DataStoring", 100, 10, 20, Colors.purple),
                   ];
                   print("will start");
                   final cup = Cup(Content(_video.path), tapiocaBalls);
@@ -105,11 +103,10 @@ class _TapiocaTryState extends State<TapiocaTry> {
                       processPercentage = 0;
                     });
                     print(path);
-                    GallerySaver.saveVideo(path).then((bool? success) {
-                      print(success.toString());
-                    });
+                    // GallerySaver.saveVideo(path).then((bool? success) {
+                    //   print(success.toString());
+                    // });
 
-                      print('Inside current State');
                       Navigator.push(context,
                           MaterialPageRoute(builder: (context) =>
                               TapiVidScreen(path)),);
@@ -118,13 +115,17 @@ class _TapiocaTryState extends State<TapiocaTry> {
                       //       TapiVidScreen(path)),
                       // );
 
-
                     setState(() {
                       isLoading = false;
                     });
                   }).catchError((e) {
-                    print('Got error: $e');
 
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(const SnackBar(content: Text('Operation Failed')));
+                    setState(() {
+                      isLoading = false;
+                    });
+                    print('Got error: $e');
                   });
                 } on PlatformException {
                   print("error!!!!");

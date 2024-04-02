@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter/ffmpeg_session.dart';
-import 'package:ffmpeg_kit_flutter/ffprobe_kit.dart';
-import 'package:ffmpeg_kit_flutter/log.dart';
-import 'package:ffmpeg_kit_flutter/return_code.dart';
-import 'package:ffmpeg_kit_flutter/statistics.dart';
+// import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
+// import 'package:ffmpeg_kit_flutter/ffmpeg_session.dart';
+// import 'package:ffmpeg_kit_flutter/ffprobe_kit.dart';
+// import 'package:ffmpeg_kit_flutter/log.dart';
+// import 'package:ffmpeg_kit_flutter/return_code.dart';
+// import 'package:ffmpeg_kit_flutter/statistics.dart';
+import 'package:ffmpeg_kit_flutter_full/ffprobe_kit.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -15,6 +16,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:prsample/filters.dart';
+import 'package:prsample/screens/cachedVideos.dart';
 import 'package:prsample/screens/image_time_screen.dart';
 import 'package:prsample/screens/tapioca.dart';
 import 'package:prsample/screens/video_editor_screen.dart';
@@ -73,8 +75,6 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
       print("Error picking images: $e");
     }
   }
-
-
 
   void videoInfo() {
     FFprobeKit.getMediaInformationAsync(
@@ -135,19 +135,21 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
                       onPressed: _pickVideo,
                       child: const Text("Edit a Video"),
                     ),
+
+                    SizedBox(height: 10,),
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (_) => CachedVideos()));
+                        },
+                        child: const Text("Created Cached videos"),
+                      ),
+                    ),
                   ],
                 )
-               ,                const SizedBox(height: 10),
+               ,
 
-                Center(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => TapiocaTry()));
-                    },
-                    child: const Text("Tapioca try"),
-                  ),
-                ),
 
               ],
             )

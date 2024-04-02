@@ -1,3 +1,4 @@
+import 'package:ffmpeg_kit_flutter_full/ffmpeg_kit_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -14,6 +15,7 @@ Future<void> main() async {
     Permission.storage.request();
   }
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  FFmpegKitConfig.setFontDirectory('/system/fonts');
   runApp(const MyApp());
 }
 

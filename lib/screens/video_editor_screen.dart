@@ -1,16 +1,17 @@
 import 'dart:developer';
 import 'dart:io';
-import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter/log.dart';
-import 'package:ffmpeg_kit_flutter/return_code.dart';
+import 'package:ffmpeg_kit_flutter_full/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_full/ffprobe_kit.dart';
+import 'package:ffmpeg_kit_flutter_full/ffprobe_session.dart';
+import 'package:ffmpeg_kit_flutter_full/log.dart';
+import 'package:ffmpeg_kit_flutter_full/return_code.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:gallery_saver/gallery_saver.dart';
+import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:prsample/filters.dart';
 import 'package:prsample/screens/selectfiles.dart';
-import 'package:tapioca/tapioca.dart';
 import 'package:video_editor/video_editor.dart';
 
 class VideoEditor extends StatefulWidget {
@@ -35,18 +36,45 @@ class _VideoEditorState extends State<VideoEditor> {
   );
   late String toSavePath;
   bool filterLoading = false;
+  bool audioLoading = false;
+  double vidHeight=0.0;
+  double vidWidth = 0.0;
+  late double aspectratio;
 
   @override
   void initState() {
     toSavePath = widget.file.path;
     super.initState();
-    _controller
-        .initialize(aspectRatio: 16 / 9)
-        .then((_) => setState(() {}))
-        .catchError((error) {
-      // handle minimum duration bigger than video duration error
-      Navigator.pop(context);
-    }, test: (e) => e is VideoMinDurationError);
+    FFprobeKit.getMediaInformationAsync(
+        toSavePath,
+            (session) async {
+          final information = (session).getMediaInformation()!;
+          var logger = Logger();
+          logger.d(information.getAllProperties());
+          int h =  information.getAllProperties()!['streams'][0]['height'];
+          vidHeight = h.toDouble();
+          int w = information.getAllProperties()!['streams'][0]['width'];
+          vidWidth = w.toDouble();
+          double bigValue = vidWidth/vidHeight; // Example double value
+           aspectratio = double.parse(bigValue.toStringAsFixed(2));
+          logger.d(aspectratio);
+
+          log(information.getAllProperties()!['streams'][0]['height'].toString());
+          log(information.getAllProperties()!['streams'][0]['width'].toString());
+
+        }).then((value) {
+      Future.delayed(Duration(seconds: 2)).then((value) {
+        _controller
+            .initialize(aspectRatio: aspectratio)
+            .then((_) => setState(() {}))
+            .catchError((error) {
+          // handle minimum duration bigger than video duration error
+          Navigator.pop(context);
+        }, test: (e) => e is VideoMinDurationError);
+      });
+
+    });
+
   }
 
   @override
@@ -60,6 +88,9 @@ class _VideoEditorState extends State<VideoEditor> {
 
   Future<void> pickAudioFile() async {
     Directory directory = await getTemporaryDirectory();
+    setState(() {
+      audioLoading = true;
+    });
     try {
       FilePickerResult? pickedFiles = await FilePicker.platform
           .pickFiles(allowMultiple: false, type: FileType.audio);
@@ -89,16 +120,21 @@ class _VideoEditorState extends State<VideoEditor> {
           ReturnCode? variable = await session.getReturnCode();
 
           if (variable?.isValueSuccess() == true) {
+
             print('Video conversion successful');
             setState(() {
+              audioLoading = false;
               _controller = VideoEditorController.file(File(outputPath),
                   minDuration: const Duration(seconds: 1),
                   maxDuration: const Duration(seconds: 20));
               _controller
-                  .initialize(aspectRatio: 16 / 9)
+                  .initialize(aspectRatio: aspectratio)
                   .then((_) => setState(() {}));
             });
           } else {
+            setState(() {
+              audioLoading = false;
+            });
             ScaffoldMessenger.of(context)
                 .showSnackBar(const SnackBar(content: Text('Operation Failed!!!')));
             final List<Log> info = await session.getAllLogs();
@@ -109,18 +145,25 @@ class _VideoEditorState extends State<VideoEditor> {
         });
       }
     } catch (e) {
+      setState(() {
+        audioLoading = false;
+      });
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Error Loading File')));
       print('Error picking files: $e');
     }
   }
 
   Future<void> applyTextOnVideo() async {
+
     Directory directory = await getTemporaryDirectory();
     String tempTextOverlayPath = '${directory.path}/${DateTime.now().microsecond.toString()}.mp4';
-    String command = '-i ${toSavePath} -vf "HelloWorld":fontsize=50:fontcolor=white:x=100:y=100 -codec:a copy ${tempTextOverlayPath}';
+    String command = ' -i $toSavePath -vf "drawtext=text='"${imgVidController.value.text.toString()}"':fontcolor=purple:fontsize=50:x=200:y=200" -c:a copy $tempTextOverlayPath';
     FFmpegKit.execute(command).then((session) async {
       ReturnCode? variable = await session.getReturnCode();
 
       if (variable?.isValueSuccess() == true) {
+        toSavePath = tempTextOverlayPath;
         print('Video conversion successful');
 
       setState(() {
@@ -128,10 +171,13 @@ class _VideoEditorState extends State<VideoEditor> {
                   minDuration: const Duration(seconds: 1),
                   maxDuration: const Duration(seconds: 20));
               _controller
-                  .initialize(aspectRatio: 16 / 9)
+                  .initialize(aspectRatio: aspectratio)
                   .then((_) => setState(() {}));
             }); }
       else {
+        setState(() {
+
+        });
         final List<Log> info = await session.getAllLogs();
         for (int i = 0; i < info.length; i++) {
           print(info[i].getMessage());
@@ -165,63 +211,6 @@ class _VideoEditorState extends State<VideoEditor> {
     //   print("&&&&&&&&&&&&###############@@@@@@@${e.toString()}");
     // }
   }
-
-  //
-  void _exportVideo() async {
-    _exportingProgress.value = 0;
-    _isExporting.value = true;
-
-    final config = VideoFFmpegVideoEditorConfig(
-      _controller,
-      // format: VideoExportFormat.gif,
-      // commandBuilder: (config, videoPath, outputPath) {
-      //   final List<String> filters = config.getExportFilters();
-      //   filters.add('hflip'); // add horizontal flip
-
-      //   return '-i $videoPath ${config.filtersCmd(filters)} -preset ultrafast $outputPath';
-      // },
-    );
-
-    // await ExportService.runFFmpegCommand(
-    //   await config.getExecuteConfig(),
-    //   onProgress: (stats) {
-    //     _exportingProgress.value = config.getFFmpegProgress(stats.getTime());
-    //   },
-    //   onError: (e, s) => _showErrorSnackBar("Error on export video :("),
-    //   onCompleted: (file) {
-    //     _isExporting.value = false;
-    //     if (!mounted) return;
-    //
-    //     // showDialog(
-    //     //   context: context,
-    //     //   builder: (_) => VideoResultPopup(video: file),
-    //     // );
-    //   },
-    // );
-  }
-
-  // void _exportCover() async {
-  //   final config = CoverFFmpegVideoEditorConfig(_controller);
-  //   final execute = await config.getExecuteConfig();
-  //   if (execute == null) {
-  //     _showErrorSnackBar("Error on cover exportation initialization.");
-  //     return;
-  //   }
-  //
-  //   await ExportService.runFFmpegCommand(
-  //     execute,
-  //     onError: (e, s) => _showErrorSnackBar("Error on cover exportation :("),
-  //     onCompleted: (cover) {
-  //       if (!mounted) return;
-  //
-  //       showDialog(
-  //         context: context,
-  //         builder: (_) => CoverResultPopup(cover: cover),
-  //       );
-  //     },
-  //   );
-  // }
-
   /// Export the video as a GIF image
   Future<void> exportGif() async {
     final gifConfig = VideoFFmpegVideoEditorConfig(
@@ -237,7 +226,19 @@ class _VideoEditorState extends State<VideoEditor> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
+    return audioLoading ? const Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              color: Colors.red,
+            ),
+            Text('Inserting Audio',style: TextStyle(color: Colors.red),)
+          ],
+        ),
+      ),
+    ) : PopScope(
       onPopInvoked: (invoke) => false,
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -378,7 +379,7 @@ class _VideoEditorState extends State<VideoEditor> {
                     minDuration: const Duration(seconds: 1),
                     maxDuration: const Duration(seconds: 20));
                 _controller
-                    .initialize(aspectRatio: 16 / 9)
+                    .initialize(aspectRatio: aspectratio)
                     .then((_) => setState(() {}));
               });
             }
@@ -405,7 +406,7 @@ class _VideoEditorState extends State<VideoEditor> {
                     minDuration: const Duration(seconds: 1),
                     maxDuration: const Duration(seconds: 20));
                 _controller
-                    .initialize(aspectRatio: 16 / 9)
+                    .initialize(aspectRatio: aspectratio)
                     .then((_) => setState(() {}));
               });
             }
@@ -433,7 +434,7 @@ class _VideoEditorState extends State<VideoEditor> {
                     minDuration: const Duration(seconds: 1),
                     maxDuration: const Duration(seconds: 20));
                 _controller
-                    .initialize(aspectRatio: 16 / 9)
+                    .initialize(aspectRatio: aspectratio)
                     .then((_) => setState(() {}));
               });
             }
@@ -448,7 +449,11 @@ class _VideoEditorState extends State<VideoEditor> {
       ],
     );
   }
-
+  Future<void> saveEditedVideo(File editedVideo) async {
+    Directory cacheDir = await getTemporaryDirectory();
+    String videoPath = '${cacheDir.path}/edited_video_${DateTime.now().millisecondsSinceEpoch}.mp4';
+    await editedVideo.copy(videoPath);
+  }
   Widget _topNavBar() {
     return SafeArea(
       child: SizedBox(
@@ -457,7 +462,7 @@ class _VideoEditorState extends State<VideoEditor> {
           children: [
             Expanded(
               child: IconButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_)=> SelectImageScreen())),
                 icon: const Icon(
                   Icons.arrow_back,
                   color: Colors.white,
@@ -477,41 +482,6 @@ class _VideoEditorState extends State<VideoEditor> {
                       Icons.audiotrack,
                       color: Colors.white,
                     ))),
-            // Expanded(
-            //   child: IconButton(
-            //     onPressed: () =>
-            //         _controller.rotate90Degrees(RotateDirection.left),
-            //     icon: const Icon(
-            //       Icons.rotate_left,
-            //       color: Colors.white,
-            //     ),
-            //     tooltip: 'Rotate unclockwise',
-            //   ),
-            // ),
-            // Expanded(
-            //   child: IconButton(
-            //     onPressed: () =>
-            //         _controller.rotate90Degrees(RotateDirection.right),
-            //     icon: const Icon(
-            //       Icons.rotate_right,
-            //       color: Colors.white,
-            //     ),
-            //     tooltip: 'Rotate clockwise',
-            //   ),
-            // ),
-            // Expanded(
-            //   child: IconButton(
-            //     onPressed: () =>
-            //         Navigator.push(
-            //       context,
-            //       MaterialPageRoute<void>(
-            //         builder: (context) => CropPage(controller: _controller),
-            //       ),
-            //     ),
-            //     icon: const Icon(Icons.crop,color:Colors.white),
-            //     tooltip: 'Open crop screen',
-            //   ),
-            // ),
             const VerticalDivider(
               endIndent: 22,
               indent: 22,
@@ -523,13 +493,16 @@ class _VideoEditorState extends State<VideoEditor> {
               onPressed: () async {
                 String command =
                     '-i $toSavePath -ss ${_controller.startTrim.inSeconds} -t ${_controller.endTrim.inSeconds - _controller.startTrim.inSeconds} -c copy /storage/emulated/0/Download/${DateTime.now().microsecond}.mp4';
+
                 await FFmpegKit.execute(command).then((session) async {
                   ReturnCode? variable = await session.getReturnCode();
 
                   if (variable?.isValueSuccess() == true) {
+                    File file = File(toSavePath);
+                    saveEditedVideo(file);
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                         content: Text(
-                            "Video Trimmed in Local Storage in Downloads")));
+                            "Video Trimmed and saved in Cached")));
                     Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
