@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:ffmpeg_kit_flutter_full/ffmpeg_kit_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,7 +14,9 @@ Future<void> main() async {
     statusBarBrightness: Brightness.light,
   ));
   if (await Permission.storage.isDenied) {
-    Permission.storage.request();
+    Permission.storage.request().then((value) {
+      value.isDenied ? exit(0) : null;
+    });
   }
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   FFmpegKitConfig.setFontDirectory('/system/fonts');

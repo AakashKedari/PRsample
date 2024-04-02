@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:card_swiper/card_swiper.dart';
@@ -22,8 +23,12 @@ class _CachedVideosState extends State<CachedVideos> {
         .map((entity) => File(entity.path))
         .toList();
 
+    for(int k=0;k<videoFiles.length;k++){
+      print(videoFiles[k].path);
+    }
+
     // Remove files whose path ends with 'temp_collage.mp4'
-    List<File> filteredList = videoFiles.where((file) => !file.path.endsWith('temp_collage.mp4')).toList();
+    List<File> filteredList = videoFiles.where((file) => !file.path.endsWith('temporary.mp4')).toList();
 
     for(int k=0;k<filteredList.length;k++){
       print(filteredList[k].path);
@@ -50,15 +55,16 @@ class _CachedVideosState extends State<CachedVideos> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: fetchedVids.length == 0 ? Center(
+      body: fetchedVids.isEmpty ? const Center(
         child: Text('Nothing Created Yet'),
       ) :  Swiper(
+        loop: false,
         scrollDirection: Axis.vertical,
         itemCount: fetchedVids.length,
         itemBuilder: (context,index){
         return VideoPlayerItem(videoFile: fetchedVids[index]);
         },
-        pagination: SwiperPagination(),
+        pagination: const SwiperPagination(),
 
       )
       // ListView.builder(

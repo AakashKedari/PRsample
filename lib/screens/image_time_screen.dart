@@ -31,20 +31,19 @@ class _ImageTimerState extends State<ImageTimer> {
 
   // Default duration for each image
   int defaultDuration = 3;
-  bool isLoading = false;
+  bool loadingFlag = false;
 
   // List to hold the duration for each image
   late List<int> durations ;
 
   void convertImagetoVideo() async {
     Directory directory = await getTemporaryDirectory();
-    String output = '${directory.path}/temp_collage.mp4';
+    String output = '${directory.path}/temporary.mp4';
     String manualImagePaths = '';
 
     for (int i = 0; i < widget.images.length; i++) {
       manualImagePaths = "$manualImagePaths-loop 1 -i ${widget.images[i].path} ";
     }
-
 
     // Below command to rename and create a copy of a video
     // String  commandtoExecute = '-i ${video_path} -c:v mpeg4 ${output_path}';
@@ -81,31 +80,20 @@ class _ImageTimerState extends State<ImageTimer> {
     ).then((session) async {
       ReturnCode? variable = await session.getReturnCode();
 
-      List<Statistics> statistics =
-      await (session as FFmpegSession).getStatistics();
-
-      for (int k = 0; k < statistics.length; k++) {
-        print(statistics[k].getSpeed());
-      }
-
       if (variable?.isValueSuccess() == true) {
         print('Video conversion successful');
-        setState(() {
-          isLoading = false;
-        });
-
         Future.delayed(const Duration(seconds: 1)).then((value) {
           Navigator.push(
               context,
               MaterialPageRoute(
                   builder: (_) => VideoEditor(file: File(output))));
           // setState(() {
-          //   isLoading = false;
+          //   loadingFlag = false;
           // });
         });
       } else {
         setState(() {
-          isLoading = false;
+          loadingFlag = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(widget.images.length == 1
@@ -138,14 +126,14 @@ class _ImageTimerState extends State<ImageTimer> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: !loadingFlag ?  AppBar(
         title: Text('Image Duration'),centerTitle: true,
-      ),
-      body: isLoading ? Center(
+      ) : null,
+      body: loadingFlag ? const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Loading',style: TextStyle(color: Colors.red),),
+            Text('Generating',style: TextStyle(color: Colors.red),),
             CircularProgressIndicator(),
           ],
         ),
@@ -182,19 +170,15 @@ class _ImageTimerState extends State<ImageTimer> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: !loadingFlag ?  FloatingActionButton(
         onPressed: () {
-
           setState(() {
-            isLoading = true;
+            loadingFlag = true;
           });
-
-          print(durations);
           convertImagetoVideo();
-
         },
-        child: Icon(Icons.video_collection),
-      ),
+        child: const Icon(Icons.video_collection),
+      ) : null,
       // ListView.builder(
       //     itemCount: widget.images.length,
       //     itemBuilder: (context,index) {

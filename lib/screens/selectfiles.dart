@@ -1,26 +1,14 @@
-import 'dart:async';
+
+import 'dart:developer';
 import 'dart:io';
-// import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
-// import 'package:ffmpeg_kit_flutter/ffmpeg_session.dart';
-// import 'package:ffmpeg_kit_flutter/ffprobe_kit.dart';
-// import 'package:ffmpeg_kit_flutter/log.dart';
-// import 'package:ffmpeg_kit_flutter/return_code.dart';
-// import 'package:ffmpeg_kit_flutter/statistics.dart';
 import 'package:ffmpeg_kit_flutter_full/ffprobe_kit.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:prsample/filters.dart';
 import 'package:prsample/screens/cachedVideos.dart';
 import 'package:prsample/screens/image_time_screen.dart';
-import 'package:prsample/screens/tapioca.dart';
 import 'package:prsample/screens/video_editor_screen.dart';
-import 'package:video_editor/video_editor.dart';
 
 class SelectImageScreen extends StatefulWidget {
   const SelectImageScreen({super.key});
@@ -34,8 +22,8 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
 
   void _pickVideo() async {
     final XFile? file = await _picker.pickVideo(source: ImageSource.gallery);
-    print('&&&&&&&&&&&&&&&&&&${file?.path}');
-    if (mounted && file != null) {
+
+    if (mounted && file!=null) {
       Navigator.push(
         context,
         MaterialPageRoute<void>(
@@ -45,10 +33,8 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
     }
   }
 
-  List<XFile> imagePath = [];
-  String customImagePaths = '';
+  List<XFile> selectedImagesPaths = [];
   late Directory directory;
-
   void pickImages() async {
     directory = await getTemporaryDirectory();
     isLoading = true;
@@ -56,15 +42,14 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
 
     try {
       ImagePicker imagePicker = ImagePicker();
-      List<XFile> imageesss = await imagePicker.pickMultiImage();
+      selectedImagesPaths = await imagePicker.pickMultiImage();
 
-      if (!imageesss.isEmpty) {
-        imagePath = imageesss;
+      if (selectedImagesPaths.isNotEmpty && mounted) {
         Navigator.push(context, MaterialPageRoute(builder: (_)=> ImageTimer(
-          images: imagePath,
+          images: selectedImagesPaths,
         ) ));
 
-      } else if (imageesss.isEmpty) {
+      } else if (selectedImagesPaths.isEmpty) {
         setState(() {
           ScaffoldMessenger.of(context)
               .showSnackBar(const SnackBar(content: Text("Nothing Selected")));
@@ -91,80 +76,76 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("PRs",
-            style: TextStyle(fontWeight: FontWeight.w500, fontSize: 25)),
-        automaticallyImplyLeading: false,
-        centerTitle: true,
-      ),
-      body: !isLoading
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: 10),
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      'Hello...',
-                      style: TextStyle(
-                          fontFamily: 'OpenSans',
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    'Lets Start Creating ',
-                    style: TextStyle(fontFamily: 'OpenSans', fontSize: 20,fontWeight: FontWeight.bold),
-                  ),
-                ),
-                const SizedBox(height: 150),
-                Column(
+    return SafeArea(
+      child: Scaffold(
 
-                  children: [
-                    ElevatedButton(
-                      onPressed: pickImages,
-                      child: const Text("Image Collage"),
-                    ),
-                    ElevatedButton(
-                      onPressed: _pickVideo,
-                      child: const Text("Edit a Video"),
-                    ),
-
-                    SizedBox(height: 10,),
-                    Center(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => CachedVideos()));
-                        },
-                        child: const Text("Created Cached videos"),
+        body: !isLoading
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 10),
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        'Hello...',
+                        style: TextStyle(
+                            fontFamily: 'OpenSans',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold),
                       ),
                     ),
-                  ],
-                )
-               ,
-
-
-              ],
-            )
-          : const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Creating Video"),
-                  SizedBox(
-                    height: 10,
                   ),
-                  CircularProgressIndicator()
+                  const SizedBox(height: 10),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      'Lets Start Creating ',
+                      style: TextStyle(fontFamily: 'OpenSans', fontSize: 20,fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(height: 150),
+                  Column(
+      
+                    children: [
+                      ElevatedButton(
+                        onPressed: pickImages,
+                        child: const Text("Image Collage"),
+                      ),
+                      ElevatedButton(
+                        onPressed: _pickVideo,
+                        child: const Text("Edit a Video"),
+                      ),
+      
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(context,
+                                MaterialPageRoute(builder: (_) => const CachedVideos()));
+                          },
+                          child: const Text("Saved Edits"),
+                        ),
+                      ),
+                    ],
+                  )
+                 ,
+      
+      
                 ],
+              )
+            : const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text("Creating Video"),
+                    SizedBox(
+                      height: 10,
+                    ),
+                    CircularProgressIndicator()
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 }

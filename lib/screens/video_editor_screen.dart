@@ -49,21 +49,19 @@ class _VideoEditorState extends State<VideoEditor> {
         toSavePath,
             (session) async {
           final information = (session).getMediaInformation()!;
-          var logger = Logger();
-          logger.d(information.getAllProperties());
           int h =  information.getAllProperties()!['streams'][0]['height'];
           vidHeight = h.toDouble();
           int w = information.getAllProperties()!['streams'][0]['width'];
           vidWidth = w.toDouble();
           double bigValue = vidWidth/vidHeight; // Example double value
            aspectratio = double.parse(bigValue.toStringAsFixed(2));
-          logger.d(aspectratio);
 
-          log(information.getAllProperties()!['streams'][0]['height'].toString());
-          log(information.getAllProperties()!['streams'][0]['width'].toString());
+          log("height : ${information.getAllProperties()!['streams'][0]['width'].toString()}");
+          log("width : ${information.getAllProperties()!['streams'][0]['height'].toString()}");
+
 
         }).then((value) {
-      Future.delayed(Duration(seconds: 2)).then((value) {
+      Future.delayed(const Duration(seconds: 2)).then((value) {
         _controller
             .initialize(aspectRatio: aspectratio)
             .then((_) => setState(() {}))
@@ -108,7 +106,7 @@ class _VideoEditorState extends State<VideoEditor> {
 
         // Below command to replace a video's sound
         String outputPath =
-            '${directory.path}/${DateTime.now().microsecond}.mp4';
+            '${directory.path}/temporary.mp4';
         String commandtoExecute =
             // '-i ${widget.file.path} -i $newFilePath -c copy $outputPath';
             '-i ${widget.file.path} -i $newFilePath -map 0:v -map 1:a -c:v copy -c:a aac $outputPath';
@@ -224,6 +222,38 @@ class _VideoEditorState extends State<VideoEditor> {
     // ...
   }
 
+  Future<void> saveEditedVideo() async {
+    Directory cacheDir = await getTemporaryDirectory();
+    String videoPath = '${cacheDir.path}/edited_video_${DateTime.now().millisecondsSinceEpoch}.mp4';
+    String command =
+        '-i $toSavePath -ss ${_controller.startTrim.inSeconds} -t ${_controller.endTrim.inSeconds - _controller.startTrim.inSeconds} -vf scale=720:1280 -c copy $videoPath';
+    await FFmpegKit.execute(command).then((session) async {
+      ReturnCode? variable = await session.getReturnCode();
+
+      if (variable?.isValueSuccess() == true) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+                "Video Trimmed and Cached")));
+        Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (_) => const SelectImageScreen()));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Some Error Occurred")));
+        List<Log> errors = await session.getAllLogs();
+        for (int j = 0; j < errors.length; j++) {
+          print(errors[j].getMessage());
+        }
+        Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (_) => const SelectImageScreen()));
+      }
+    });
+
+  }
+
   @override
   Widget build(BuildContext context) {
     return audioLoading ? const Scaffold(
@@ -324,7 +354,7 @@ class _VideoEditorState extends State<VideoEditor> {
                                     color: Colors.white,
                                   )
                                 : videoEffectsWidget(),
-                            const Text('Add a Text'),
+                            const Text('Overlay Text'),
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 15),
@@ -332,7 +362,7 @@ class _VideoEditorState extends State<VideoEditor> {
                                 controller: imgVidController,
                                 decoration: InputDecoration(
                                     hintText: 'Enter text to apply on Vid',
-                                    hintStyle: TextStyle(
+                                    hintStyle: const TextStyle(
                                         color: Colors.grey,
                                         fontWeight: FontWeight.w100),
                                     suffixIcon: IconButton(
@@ -449,11 +479,7 @@ class _VideoEditorState extends State<VideoEditor> {
       ],
     );
   }
-  Future<void> saveEditedVideo(File editedVideo) async {
-    Directory cacheDir = await getTemporaryDirectory();
-    String videoPath = '${cacheDir.path}/edited_video_${DateTime.now().millisecondsSinceEpoch}.mp4';
-    await editedVideo.copy(videoPath);
-  }
+
   Widget _topNavBar() {
     return SafeArea(
       child: SizedBox(
@@ -490,71 +516,7 @@ class _VideoEditorState extends State<VideoEditor> {
             Expanded(
                 child: TextButton(
               child: const Text("Save"),
-              onPressed: () async {
-                String command =
-                    '-i $toSavePath -ss ${_controller.startTrim.inSeconds} -t ${_controller.endTrim.inSeconds - _controller.startTrim.inSeconds} -c copy /storage/emulated/0/Download/${DateTime.now().microsecond}.mp4';
-
-                await FFmpegKit.execute(command).then((session) async {
-                  ReturnCode? variable = await session.getReturnCode();
-
-                  if (variable?.isValueSuccess() == true) {
-                    File file = File(toSavePath);
-                    saveEditedVideo(file);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text(
-                            "Video Trimmed and saved in Cached")));
-                    Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const SelectImageScreen()));
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Some Error Occurred")));
-                    List<Log> errors = await session.getAllLogs();
-                    for (int j = 0; j < errors.length; j++) {
-                      print(errors[j].getMessage());
-                    }
-                    Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const SelectImageScreen()));
-                  }
-                });
-                // showDialog(context: context, builder: (context){
-                //   return  Center(
-                //     child: InkWell(
-                //       onTap: () async {
-                //
-                //       },
-                //       child: Container(
-                //         height: 200,
-                //         child:  Text('Save to Download Folder')
-                //         // AlertDialog(
-                //         //
-                //         //   title: Text("Name of The Edited Video"),
-                //         //   content: Column(
-                //         //     children: [
-                //         //       TextField(
-                //         //         controller: textEditingController,
-                //         //       ),
-                //         //       SizedBox(height: 40,),
-                //         //       Center(
-                //         //         child: ElevatedButton(
-                //         //           onPressed: () async {
-                //         //             print(widget.file.path);
-                //         //
-                //         //           },
-                //         //           child: Text('Save to Download'),
-                //         //         ),
-                //         //       )
-                //         //     ],
-                //         //   ),
-                //         // ),
-                //       ),
-                //     ),
-                //   );
-                // });
-              },
+              onPressed: saveEditedVideo,
             )
                 // PopupMenuButton(
                 //   // color: Colors.white,
