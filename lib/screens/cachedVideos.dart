@@ -21,34 +21,22 @@ class _CachedVideosState extends State<CachedVideos> {
         .where((entity) => entity is File && entity.path.endsWith('.mp4'))
         .map((entity) => File(entity.path))
         .toList();
-    fetchedVids = removeDuplicates(videoFiles);
-    for(int k=0;k<fetchedVids.length;k++){
-      print(fetchedVids[k].path);
+
+    // Remove files whose path ends with 'temp_collage.mp4'
+    List<File> filteredList = videoFiles.where((file) => !file.path.endsWith('temp_collage.mp4')).toList();
+
+    for(int k=0;k<filteredList.length;k++){
+      print(filteredList[k].path);
     }
+
     setState(() {
-      fetchedVids = videoFiles;
+      fetchedVids = filteredList;
     });
 
     return videoFiles;
   }
 
-  List<File> removeDuplicates(List<File> list) {
-    // Create a set to store unique items
-    Set<File> uniqueSet = {};
 
-    // Create a new list to store unique items
-    List<File> uniqueList = [];
-
-    for (var item in list) {
-      // Add item to set if it's not already present (to maintain uniqueness)
-      if (!uniqueSet.contains(item)) {
-        uniqueSet.add(item);
-        uniqueList.add(item);
-      }
-    }
-
-    return uniqueList;
-  }
 
 
 
