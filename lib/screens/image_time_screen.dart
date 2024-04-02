@@ -38,7 +38,7 @@ class _ImageTimerState extends State<ImageTimer> {
 
   void convertImagetoVideo() async {
     Directory directory = await getTemporaryDirectory();
-    String output = '${directory.path}/temp_collage}.mp4';
+    String output = '${directory.path}/temp_collage.mp4';
     String manualImagePaths = '';
 
     for (int i = 0; i < widget.images.length; i++) {
