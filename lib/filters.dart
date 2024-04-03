@@ -105,12 +105,12 @@ Future<String> applyFilters(String toSavePath, int filterNumber) async {
   // ' -i ${inputPath} -vf colorbalance=rs=0.7:gs=0.9 ${outputPath}';
 
   final String command = filterNumber == 1
-      ? ' -i $inputPath -vf rgbashift=rh=-6:gh=6 -pix_fmt yuv420p -y $outputPath'
+      ? ' -i $inputPath -vf rgbashift=rh=-6:gh=6 -pix_fmt yuv420p -b:v 10M -y $outputPath'
       : filterNumber == 2
           ? // Retro
-          " -i $inputPath -vf curves=blue='0/0 0.5/0.58 1/1' -y $outputPath"
+          " -i $inputPath -vf curves=blue='0/0 0.5/0.58 1/1' -b:v 10M -y $outputPath"
           : // Execute Curves
-          " -i $inputPath -vf noise=alls=60:allf=t+u -y $outputPath";
+          " -i $inputPath -vf noise=alls=60:allf=t+u -b:v 10M  -y $outputPath";
   await FFmpegKit.execute(command).then((session) async {
     ReturnCode? variable = await session.getReturnCode();
 

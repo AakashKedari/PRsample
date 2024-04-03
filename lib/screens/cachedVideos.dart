@@ -180,15 +180,11 @@ class _VideoPlayerItemState extends State<VideoPlayerItem> {
         future: _initializeVideoPlayerFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
-            return Center(
-              child: SizedBox(
-                height: 1280,
-                width: 720,
-                child: VideoPlayer(_controller),
-              ),
-            );
+            return AspectRatio(
+                aspectRatio: _controller.value.aspectRatio,
+                child: VideoPlayer(_controller));
           } else {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
         },
       ),

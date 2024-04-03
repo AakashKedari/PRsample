@@ -2,13 +2,11 @@ import 'dart:developer';
 import 'dart:io';
 import 'package:ffmpeg_kit_flutter_full/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_full/ffprobe_kit.dart';
-import 'package:ffmpeg_kit_flutter_full/ffprobe_session.dart';
 import 'package:ffmpeg_kit_flutter_full/log.dart';
 import 'package:ffmpeg_kit_flutter_full/return_code.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:prsample/constants.dart';
 import 'package:prsample/customWidgets/volume_slider.dart';
@@ -59,13 +57,10 @@ class _VideoEditorState extends State<VideoEditor> {
       double bigValue = vidWidth / vidHeight; // Example double value
       aspectratio = double.parse(bigValue.toStringAsFixed(2));
 
-      // log("height : ${information.getAllProperties()!['streams'][0]['width'].toString()}");
-      // log("width : ${information.getAllProperties()!['streams'][0]['height'].toString()}");
-      // log('aspectratio : $aspectratio');
     }).then((value) {
       Future.delayed(const Duration(seconds: 2)).then((value) {
         _controller
-            .initialize(aspectRatio: aspectratio)
+            .initialize(aspectRatio: aspectratio )
             .then((_) => setState(() {}))
             .catchError((error) {
           // handle minimum duration bigger than video duration error
@@ -77,13 +72,13 @@ class _VideoEditorState extends State<VideoEditor> {
 
   @override
   void dispose() async {
-
     _controller.dispose();
     // ExportService.dispose();
     super.dispose();
   }
 
   Future<void> pickAudioFile(double volume) async {
+
     Directory directory = await getTemporaryDirectory();
     setState(() {
       audioLoading = true;
@@ -117,7 +112,6 @@ class _VideoEditorState extends State<VideoEditor> {
         } else {
           filteredToSavePath = outputPath;
         }
-
 
         await FFmpegKit.execute(commandtoExecute).then((session) async {
           ReturnCode? variable = await session.getReturnCode();
@@ -165,7 +159,7 @@ class _VideoEditorState extends State<VideoEditor> {
     String tempTextOverlayPath = '${directory.path}/texttemporary.mp4';
     String command = ' -i $toSavePath -vf "drawtext=text='
         "${imgVidController.value.text.toString()}"
-        ':fontcolor=purple:fontsize=50:x=200:y=200" -c:a copy $tempTextOverlayPath';
+        ':fontcolor=purple:fontsize=50:x=200:y=200" -c:a copy -b:v 10M -y $tempTextOverlayPath';
     FFmpegKit.execute(command).then((session) async {
       ReturnCode? variable = await session.getReturnCode();
 
@@ -209,14 +203,16 @@ class _VideoEditorState extends State<VideoEditor> {
     // String videoPath = '/storage/emulated/0/Download/kb.mp4';
     String videoPath =
         '${cacheDir.path}/edited_video_${DateTime.now().millisecondsSinceEpoch}.mp4';
+    // '/storage/emulated/0/Download/${DateTime.now().microsecond}.mp4';
     String command = '';
     if (filterFlag == -1) {
       command =
-          '-i $toSavePath -ss ${_controller.startTrim.inSeconds} -t ${_controller.endTrim.inSeconds - _controller.startTrim.inSeconds} -vf scale=720:1280 $videoPath';
+          '-i $toSavePath -ss ${_controller.startTrim.inSeconds} -t ${_controller.endTrim.inSeconds - _controller.startTrim.inSeconds} -vf scale=720:1280 -b:v 10M $videoPath';
     } else {
       command =
-          '-i $filteredToSavePath -ss ${_controller.startTrim.inSeconds} -t ${_controller.endTrim.inSeconds - _controller.startTrim.inSeconds} -vf scale=720:1280 $videoPath';
+          '-i $filteredToSavePath -ss ${_controller.startTrim.inSeconds} -t ${_controller.endTrim.inSeconds - _controller.startTrim.inSeconds} -vf scale=720:1280 -b:v 10M $videoPath';
     }
+
 
     await FFmpegKit.execute(command).then((session) async {
       ReturnCode? variable = await session.getReturnCode();
