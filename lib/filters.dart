@@ -10,8 +10,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 
-String generalCommand(int n, List<XFile> photos, String tempDirectory,List<int> durations) {
-
+String generalCommand(
+    int n, List<XFile> photos, String tempDirectory, List<int> durations) {
   int totalImageSelected = n;
   String manualImagePaths = '';
 
@@ -19,11 +19,11 @@ String generalCommand(int n, List<XFile> photos, String tempDirectory,List<int> 
     manualImagePaths = "$manualImagePaths-loop 1 -i ${photos[i].path} ";
   }
 
-
   String blendFilter() {
     String blend = "";
     for (int u = 1; u < totalImageSelected; u++) {
-      blend = "$blend[stream${u + 1}starting][stream${u}ending]blend=all_expr='if(gte(X,(W/2)*T/1)*lte(X,W-(W/2)*T/1),B,A)':shortest=1[stream${u + 1}blended];";
+      blend =
+          "$blend[stream${u + 1}starting][stream${u}ending]blend=all_expr='if(gte(X,(W/2)*T/1)*lte(X,W-(W/2)*T/1),B,A)':shortest=1[stream${u + 1}blended];";
     }
     return blend;
   }
@@ -32,11 +32,14 @@ String generalCommand(int n, List<XFile> photos, String tempDirectory,List<int> 
     String pad = "";
     for (int k = 1; k <= totalImageSelected; k++) {
       if (k == 1) {
-        pad = "$pad[stream${k}out1]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=${durations[k-1]},select=lte(n\\,90)[stream${k}overlaid];[stream${k}out2]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30)[stream${k}ending];";
+        pad =
+            "$pad[stream${k}out1]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=${durations[k - 1]},select=lte(n\\,90)[stream${k}overlaid];[stream${k}out2]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30)[stream${k}ending];";
       } else if (k == totalImageSelected) {
-        pad = "$pad[stream${k}out1]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=${durations[k-1]},select=lte(n\\,90)[stream${k}overlaid];[stream${k}out2]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30)[stream${k}starting];";
+        pad =
+            "$pad[stream${k}out1]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=${durations[k - 1]},select=lte(n\\,90)[stream${k}overlaid];[stream${k}out2]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30)[stream${k}starting];";
       } else {
-        pad = "$pad[stream${k}out1]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=${durations[k-1]},select=lte(n\\,90)[stream${k}overlaid];[stream${k}out2]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30),split=2[stream${k}starting][stream${k}ending];";
+        pad =
+            "$pad[stream${k}out1]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=${durations[k - 1]},select=lte(n\\,90)[stream${k}overlaid];[stream${k}out2]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30),split=2[stream${k}starting][stream${k}ending];";
       }
     }
     return pad;
@@ -59,14 +62,12 @@ String generalCommand(int n, List<XFile> photos, String tempDirectory,List<int> 
   String setptsFilter() {
     String setpts = '';
     for (int j = 0; j < totalImageSelected; j++) {
-      setpts = "$setpts[$j:v]setpts=PTS-STARTPTS,scale=w='if(gte(iw/ih,720/1280),min(iw,720),-1)':h='if(gte(iw/ih,720/1280),-1,min(ih,1280))',scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=sar=1/1,split=2[stream${j + 1}out1][stream${j + 1}out2];";
+      setpts =
+          "$setpts[$j:v]setpts=PTS-STARTPTS,scale=w='if(gte(iw/ih,720/1280),min(iw,720),-1)':h='if(gte(iw/ih,720/1280),-1,min(ih,1280))',scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=sar=1/1,split=2[stream${j + 1}out1][stream${j + 1}out2];";
     }
 
     return setpts;
   }
-
-
-
 
   String lastFilter() {
     String last = "";
@@ -80,22 +81,21 @@ String generalCommand(int n, List<XFile> photos, String tempDirectory,List<int> 
     return last;
   }
 
-
-
-
-  String command = "-hide_banner -y $manualImagePaths-filter_complex \"${setptsFilter()}${padFilter()}${blendFilter()}${lastFilter()}concat=n=${((totalImageSelected-1) *2) + 1}:v=1:a=0,scale=w=720:h=1280,format=yuv420p[video]\" -map [video] -fps_mode cfr -c:v mpeg4 -b:v 10M -r 30 ";
-
+  String command =
+      "-hide_banner -y $manualImagePaths-filter_complex \"${setptsFilter()}${padFilter()}${blendFilter()}${lastFilter()}concat=n=${((totalImageSelected - 1) * 2) + 1}:v=1:a=0,scale=w=720:h=1280,format=yuv420p[video]\" -map [video] -fps_mode cfr -c:v mpeg4 -b:v 10M -r 30 ";
 
   var logger = Logger();
   logger.d(command);
   return command;
 }
 
-Future<String> applyEffect(String toSavePath,int filterNumber) async {
+Future<String> applyFilters(String toSavePath, int filterNumber) async {
   // Input and output paths
   final String inputPath = toSavePath;
+
   Directory directory = await getTemporaryDirectory();
-  final String outputPath = '${directory.path}/${Random().nextInt(2000).toString()}.mp4';
+
+  final String  outputPath = '${directory.path}/Filtertemporary.mp4';
 
   // Declare a variable to hold the output path
   String? result;
@@ -104,18 +104,20 @@ Future<String> applyEffect(String toSavePath,int filterNumber) async {
 
   // ' -i ${inputPath} -vf colorbalance=rs=0.7:gs=0.9 ${outputPath}';
 
-  final String command = filterNumber == 1 ?
-  ' -i $inputPath -vf rgbashift=rh=-6:gh=6 -pix_fmt yuv420p $outputPath' : filterNumber == 2 ?// Retro
-" -i $inputPath -vf curves=blue='0/0 0.5/0.58 1/1' $outputPath" :  // Execute Curves
-  " -i $inputPath -vf noise=alls=60:allf=t+u $outputPath";
+  final String command = filterNumber == 1
+      ? ' -i $inputPath -vf rgbashift=rh=-6:gh=6 -pix_fmt yuv420p -y $outputPath'
+      : filterNumber == 2
+          ? // Retro
+          " -i $inputPath -vf curves=blue='0/0 0.5/0.58 1/1' -y $outputPath"
+          : // Execute Curves
+          " -i $inputPath -vf noise=alls=60:allf=t+u -y $outputPath";
   await FFmpegKit.execute(command).then((session) async {
     ReturnCode? variable = await session.getReturnCode();
 
-    if (variable!.isValueSuccess()){
+    if (variable!.isValueSuccess()) {
       print('Filter applied correctly');
       result = outputPath; // Assign the output path to the variable
-    }
-    else{
+    } else {
       print('Error Occured');
       List<Log> list = await session.getAllLogs();
       for (int i = 0; i < list.length; i++) {
@@ -123,7 +125,6 @@ Future<String> applyEffect(String toSavePath,int filterNumber) async {
       }
       result = ''; // Assign an empty string in case of error
     }
-
   });
 
   // Return the output path or an empty string
@@ -149,4 +150,3 @@ Future<String> applyEffect(String toSavePath,int filterNumber) async {
 //     " -map [video] -fps_mode cfr " +
 //     "-c:v mpeg4 -b:v 10M -r 30 " +  // Adjust bitrate and codec settings for better quality
 //     output;
-

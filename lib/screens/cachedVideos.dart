@@ -54,25 +54,27 @@ class _CachedVideosState extends State<CachedVideos> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: fetchedVids.isEmpty ? const Center(
-        child: Text('Nothing Created Yet'),
-      ) :  Swiper(
-        loop: false,
-        scrollDirection: Axis.vertical,
-        itemCount: fetchedVids.length,
-        itemBuilder: (context,index){
-        return VideoPlayerItem(videoFile: fetchedVids[index]);
-        },
-        pagination: const SwiperPagination(),
-
-      )
-      // ListView.builder(
-      //   shrinkWrap: true,
-      //     itemCount: fetchedVids.length,
-      //     itemBuilder: (context, index) {
-      //   return VideoPlayerItem(videoFile: fetchedVids[index]);
-      // }),
+    return SafeArea(
+      child: Scaffold(
+        body: fetchedVids.isEmpty ? const Center(
+          child: Text('Nothing Created Yet'),
+        ) :  Swiper(
+          loop: false,
+          scrollDirection: Axis.vertical,
+          itemCount: fetchedVids.length,
+          itemBuilder: (context,index){
+          return VideoPlayerItem(videoFile: fetchedVids[index]);
+          },
+          pagination: const SwiperPagination(),
+      
+        )
+        // ListView.builder(
+        //   shrinkWrap: true,
+        //     itemCount: fetchedVids.length,
+        //     itemBuilder: (context, index) {
+        //   return VideoPlayerItem(videoFile: fetchedVids[index]);
+        // }),
+      ),
     );
   }
 }
@@ -178,9 +180,12 @@ class _VideoPlayerItemState extends State<VideoPlayerItem> {
         future: _initializeVideoPlayerFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
-            return AspectRatio(
-              aspectRatio: _controller.value.aspectRatio,
-              child: VideoPlayer(_controller),
+            return Center(
+              child: SizedBox(
+                height: 1280,
+                width: 720,
+                child: VideoPlayer(_controller),
+              ),
             );
           } else {
             return Center(child: CircularProgressIndicator());

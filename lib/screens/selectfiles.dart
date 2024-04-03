@@ -1,7 +1,7 @@
-
 import 'dart:developer';
 import 'dart:io';
 import 'package:ffmpeg_kit_flutter_full/ffprobe_kit.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:logger/logger.dart';
@@ -21,9 +21,11 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
   final ImagePicker _picker = ImagePicker();
 
   void _pickVideo() async {
+    Directory third = await getApplicationSupportDirectory();
+    log(third.path);
     final XFile? file = await _picker.pickVideo(source: ImageSource.gallery);
 
-    if (mounted && file!=null) {
+    if (mounted && file != null) {
       Navigator.push(
         context,
         MaterialPageRoute<void>(
@@ -45,10 +47,12 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
       selectedImagesPaths = await imagePicker.pickMultiImage();
 
       if (selectedImagesPaths.isNotEmpty && mounted) {
-        Navigator.push(context, MaterialPageRoute(builder: (_)=> ImageTimer(
-          images: selectedImagesPaths,
-        ) ));
-
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => ImageTimer(
+                      images: selectedImagesPaths,
+                    )));
       } else if (selectedImagesPaths.isEmpty) {
         setState(() {
           ScaffoldMessenger.of(context)
@@ -78,7 +82,6 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-
         body: !isLoading
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -101,36 +104,39 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
                     padding: EdgeInsets.symmetric(horizontal: 8),
                     child: Text(
                       'Lets Start Creating ',
-                      style: TextStyle(fontFamily: 'OpenSans', fontSize: 20,fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          fontFamily: 'OpenSans',
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold),
                     ),
                   ),
-                  const SizedBox(height: 150),
-                  Column(
-      
-                    children: [
-                      ElevatedButton(
-                        onPressed: pickImages,
-                        child: const Text("Image Collage"),
-                      ),
-                      ElevatedButton(
-                        onPressed: _pickVideo,
-                        child: const Text("Edit a Video"),
-                      ),
-      
-                      Center(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(context,
-                                MaterialPageRoute(builder: (_) => const CachedVideos()));
-                          },
-                          child: const Text("Saved Edits"),
+
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: pickImages,
+                          child: const Text("Image Collage"),
                         ),
-                      ),
-                    ],
-                  )
-                 ,
-      
-      
+                        ElevatedButton(
+                          onPressed: _pickVideo,
+                          child: const Text("Edit a Video"),
+                        ),
+                        Center(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) => const CachedVideos()));
+                            },
+                            child: const Text("Saved Edits"),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               )
             : const Center(
@@ -149,4 +155,3 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
     );
   }
 }
-

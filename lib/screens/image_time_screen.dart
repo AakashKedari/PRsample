@@ -87,9 +87,6 @@ class _ImageTimerState extends State<ImageTimer> {
               context,
               MaterialPageRoute(
                   builder: (_) => VideoEditor(file: File(output))));
-          // setState(() {
-          //   loadingFlag = false;
-          // });
         });
       } else {
         setState(() {
