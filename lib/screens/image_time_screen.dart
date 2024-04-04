@@ -1,7 +1,10 @@
+import 'dart:developer';
 import 'dart:io';
+import 'package:crop_your_image/crop_your_image.dart';
 import 'package:ffmpeg_kit_flutter_full/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_full/log.dart';
 import 'package:ffmpeg_kit_flutter_full/return_code.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -11,8 +14,9 @@ import 'package:prsample/screens/video_editor_screen.dart';
 import '../filters.dart';
 
 class ImageTimer extends StatefulWidget {
-  final List<XFile> images;
-   const ImageTimer({super.key,required this.images});
+  final List<XFile> ximages;
+  final List<Uint8List> images;
+   const ImageTimer({super.key,required this.images,required this.ximages});
 
   @override
   State<ImageTimer> createState() => _ImageTimerState();
@@ -32,12 +36,12 @@ class _ImageTimerState extends State<ImageTimer> {
     String output = '${directory.path}/temporary.mp4';
     String manualImagePaths = '';
 
-    for (int i = 0; i < widget.images.length; i++) {
-      manualImagePaths = "$manualImagePaths-loop 1 -i ${widget.images[i].path} ";
+    for (int i = 0; i < widget.ximages.length; i++) {
+      manualImagePaths = "$manualImagePaths-loop 1 -i ${widget.ximages[i].path} ";
     }
 
     String genCommand =
-        generalCommand(widget.images.length, widget.images, directory.path,durations) + output;
+        generalCommand(widget.ximages.length, widget.ximages, directory.path,durations) + output;
 
     print("genCommand : $genCommand");
 
@@ -49,12 +53,11 @@ class _ImageTimerState extends State<ImageTimer> {
 
       if (variable?.isValueSuccess() == true) {
         print('Video conversion successful');
-        Future.delayed(const Duration(seconds: 1)).then((value) {
           Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (_) => VideoEditor(file: File(output))));
-        });
+                  builder: (_) => VideoEditor(file: File(output),collageFlag: true,)));
+
       } else {
         setState(() {
           loadingFlag = false;
@@ -77,6 +80,7 @@ class _ImageTimerState extends State<ImageTimer> {
       print('Error while executing FFmpeg command: $error');
     });
   }
+  bool cropFlag = false;
 
   @override
   void initState(){
@@ -99,47 +103,72 @@ class _ImageTimerState extends State<ImageTimer> {
             CircularProgressIndicator(),
           ],
         ),
-      ) :ListView.builder(
+      ) : Stack(
+        children: [
+          ListView.builder(
+            physics: ScrollPhysics(),
+            itemCount: widget.images.length,
+            itemBuilder: (context, index) {
+              TextEditingController controller = TextEditingController();
+              controller.text = durations[index].toString();
 
-        itemCount: widget.images.length,
-        itemBuilder: (context, index) {
-          TextEditingController controller = TextEditingController();
-          controller.text = durations[index].toString();
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              SizedBox(
-                width: 200,
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Image.file(File(widget.images[index].path),filterQuality: FilterQuality.high,),
-                ),
-              ),
-              SizedBox(
-                width: 100,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: TextFormField(
-                    controller: controller,
-                    decoration: const InputDecoration(
-
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-
-                      durations[index] = int.tryParse(value) ?? defaultDuration;
-
-                      for(int i=0;i<durations.length;i++){
-                        print(durations[i]);
-                      }
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  InkWell(
+                    onTap: (){
+                      _showCropImageDialog(context, widget.images[index],index);
+                      // setState(() {
+                      //   cropFlag = true;
+                      // });
                     },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: SizedBox(
+                        width: 200,
+                        height: 200,
+                        child:  Image.file(File(widget.ximages[index].path),filterQuality: FilterQuality.high,),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ],
-          );
-        },
+                  // SizedBox(
+                  //   width: 200,
+                  //   child: Padding(
+                  //     padding: const EdgeInsets.all(20),
+                  //     child: Crop(
+                  //       image: widget.images[index], onCropped: (Uint8List value) {  },
+                  //     )
+                  //     // Image.file(File(widget.images[index].path),filterQuality: FilterQuality.high,),
+                  //   ),
+                  // ),
+                  SizedBox(
+                    width: 100,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: TextFormField(
+                        controller: controller,
+                        decoration: const InputDecoration(
+
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) {
+
+                          durations[index] = int.tryParse(value) ?? defaultDuration;
+
+                          for(int i=0;i<durations.length;i++){
+                            print(durations[i]);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+
+        ],
       ),
 
       floatingActionButton: !loadingFlag ?  FloatingActionButton(
@@ -152,6 +181,61 @@ class _ImageTimerState extends State<ImageTimer> {
         child: const Icon(Icons.video_collection),
       ) : null,
 
+    );
+  }
+
+  void _showCropImageDialog(BuildContext context, Uint8List image,int imgNumber) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        CropController cropController = CropController();
+        return AlertDialog(
+          title: Text('Crop Image'),
+          content:  Column(
+            children: [
+              SizedBox(
+                  width: 200,
+                  height: 150,
+                  child: Crop(
+                    interactive: true,
+                    progressIndicator:const CircularProgressIndicator(),
+                      controller: cropController,
+                      image: image,
+                      onCropped: (cropped) async {
+                        String tempDirPath = (await getTemporaryDirectory()).path;
+                        // Generate a unique file name
+                        String tempFileName = '${DateTime.now().microsecond}temporary';
+                        File tempFile = File('$tempDirPath/$tempFileName');
+                        await tempFile.writeAsBytes(cropped);
+
+                      setState(()  {
+                        log('Cropped');
+                        widget.images[imgNumber] = cropped;
+                        widget.ximages[imgNumber] = XFile(tempFile.path);
+
+                      });
+
+                  },
+                  onStatusChanged: (cropStatus){
+                      CropStatus.ready;
+                  },
+                  )),
+              ElevatedButton(onPressed: (){
+                cropController.crop();
+                Navigator.pop(context);
+              }, child: Text("Crop"))
+            ],
+          )
+          // actions: [
+          //   TextButton(
+          //     onPressed: () {
+          //       Navigator.of(context).pop();
+          //     },
+          //     child: Text('Close'),
+          //   ),
+          // ],
+        );
+      },
     );
   }
 }

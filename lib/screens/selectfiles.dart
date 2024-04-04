@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:ffmpeg_kit_flutter_full/ffprobe_kit.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +21,19 @@ class SelectImageScreen extends StatefulWidget {
 class _SelectImageScreenState extends State<SelectImageScreen> {
   final ImagePicker _picker = ImagePicker();
 
+  Future<List<Uint8List>> convertXFileListToUint8List(List<XFile> xFiles) async {
+    List<Uint8List> uint8Lists = [];
+
+    for (var xFile in xFiles) {
+      List<int> bytes = await xFile.readAsBytes();
+      Uint8List uint8List = Uint8List.fromList(bytes);
+      uint8Lists.add(uint8List);
+    }
+
+    return uint8Lists;
+  }
+
+
   void _pickVideo() async {
     Directory third = await getApplicationSupportDirectory();
     log(third.path);
@@ -29,7 +43,7 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
       Navigator.push(
         context,
         MaterialPageRoute<void>(
-          builder: (BuildContext context) => VideoEditor(file: File(file.path)),
+          builder: (BuildContext context) => VideoEditor(file: File(file.path),collageFlag: false,),
         ),
       );
     }
@@ -47,11 +61,13 @@ class _SelectImageScreenState extends State<SelectImageScreen> {
       selectedImagesPaths = await imagePicker.pickMultiImage();
 
       if (selectedImagesPaths.isNotEmpty && mounted) {
+        List<Uint8List> uint8Lists = await convertXFileListToUint8List(selectedImagesPaths);
         Navigator.push(
             context,
             MaterialPageRoute(
                 builder: (_) => ImageTimer(
-                      images: selectedImagesPaths,
+                      images: uint8Lists,
+                  ximages: selectedImagesPaths,
                     )));
       } else if (selectedImagesPaths.isEmpty) {
         setState(() {
