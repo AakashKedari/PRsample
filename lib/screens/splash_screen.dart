@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 // import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:connectivity_plus/connectivity_plus.dart';
@@ -31,6 +32,7 @@ class SplashScreenState extends State<SplashScreen> {
 
   @override
   void initState() {
+
     super.initState();
     Timer(const Duration(seconds: 3), (){
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SelectImageScreen()));
@@ -169,6 +171,8 @@ class SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    log(MediaQuery.of(context).size.height.toString());
+    log(MediaQuery.of(context).size.width.toString());
     return Scaffold(
       body: Center(
         child: Column(

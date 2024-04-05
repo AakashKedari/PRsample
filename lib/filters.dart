@@ -1,17 +1,16 @@
 import 'dart:io';
-import 'dart:math';
-// import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
-// import 'package:ffmpeg_kit_flutter/log.dart';
-// import 'package:ffmpeg_kit_flutter/return_code.dart';
+import 'dart:developer';
 import 'package:ffmpeg_kit_flutter_full/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_full/log.dart';
 import 'package:ffmpeg_kit_flutter_full/return_code.dart';
+import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 
 String generalCommand(
     int n, List<XFile> photos, String tempDirectory, List<int> durations) {
+
   int totalImageSelected = n;
   String manualImagePaths = '';
 
@@ -30,7 +29,9 @@ String generalCommand(
 
   String padFilter() {
     String pad = "";
+
     for (int k = 1; k <= totalImageSelected; k++) {
+      log(durations[k-1].toString());
       if (k == 1) {
         pad =
             "$pad[stream${k}out1]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=${durations[k - 1]},select=lte(n\\,90)[stream${k}overlaid];[stream${k}out2]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30)[stream${k}ending];";
@@ -42,22 +43,9 @@ String generalCommand(
             "$pad[stream${k}out1]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=${durations[k - 1]},select=lte(n\\,90)[stream${k}overlaid];[stream${k}out2]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30),split=2[stream${k}starting][stream${k}ending];";
       }
     }
+    log("Pad filter is : ${pad}");
     return pad;
   }
-
-  // String padFilter() {
-  //   String pad = "";
-  //   for (int k = 1; k <= totalImageSelected; k++) {
-  //     if (k == 1) {
-  //       pad = "$pad[stream${k}out1]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=${durations[k-1]},select=lte(n\\,90)[stream${k}overlaid];[stream${k}out2]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30)[stream${k}ending];";
-  //     } else if (k == totalImageSelected) {
-  //       pad = "$pad[stream${k}out1]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=${durations[k-1]},select=lte(n\\,90)[stream${k}overlaid];[stream${k}out2]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30)[stream${k}starting];";
-  //     } else {
-  //       pad = "$pad[stream${k}out1]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=${durations[k-1]},select=lte(n\\,90)[stream${k}overlaid];[stream${k}out2]pad=width=640:height=427:x=(640-iw)/2:y=(427-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30),split=2[stream${k}starting][stream${k}ending];";
-  //     }
-  //   }
-  //   return pad;
-  // }
 
   String setptsFilter() {
     String setpts = '';

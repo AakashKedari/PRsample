@@ -24,8 +24,6 @@ class ImageTimer extends StatefulWidget {
 
 class _ImageTimerState extends State<ImageTimer> {
 
-  // Default duration for each image
-  int defaultDuration = 3;
   bool loadingFlag = false;
 
   // List to hold the duration for each image
@@ -34,13 +32,8 @@ class _ImageTimerState extends State<ImageTimer> {
   void convertImagetoVideo() async {
     Directory directory = await getTemporaryDirectory();
     String output = '${directory.path}/temporary.mp4';
-    String manualImagePaths = '';
 
-    for (int i = 0; i < widget.ximages.length; i++) {
-      manualImagePaths = "$manualImagePaths-loop 1 -i ${widget.ximages[i].path} ";
-    }
-
-    String genCommand =
+        String genCommand =
         generalCommand(widget.ximages.length, widget.ximages, directory.path,durations) + output;
 
     print("genCommand : $genCommand");
@@ -52,11 +45,12 @@ class _ImageTimerState extends State<ImageTimer> {
       ReturnCode? variable = await session.getReturnCode();
 
       if (variable?.isValueSuccess() == true) {
-        print('Video conversion successful');
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Video Conversion Successful')));
+        int totalTime = durations.fold(0, (previousValue, element) => previousValue + element);
           Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (_) => VideoEditor(file: File(output),collageFlag: true,)));
+                  builder: (_) => VideoEditor(file: File(output),collageFlag: true,videoDuration: totalTime,)));
 
       } else {
         setState(() {
@@ -154,7 +148,7 @@ class _ImageTimerState extends State<ImageTimer> {
                         keyboardType: TextInputType.number,
                         onChanged: (value) {
 
-                          durations[index] = int.tryParse(value) ?? defaultDuration;
+                          durations[index] = int.tryParse(value)! ;
 
                           for(int i=0;i<durations.length;i++){
                             print(durations[i]);
