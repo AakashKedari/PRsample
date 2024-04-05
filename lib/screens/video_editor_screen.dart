@@ -1,13 +1,13 @@
+import 'dart:developer';
 import 'dart:io';
-import 'dart:math';
 import 'package:ffmpeg_kit_flutter_full/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_full/ffprobe_kit.dart';
 import 'package:ffmpeg_kit_flutter_full/log.dart';
 import 'package:ffmpeg_kit_flutter_full/return_code.dart';
 import 'package:ffmpeg_kit_flutter_full/session.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:loading_indicator/loading_indicator.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:prsample/constants.dart';
 import 'package:prsample/filters.dart';
@@ -16,7 +16,11 @@ import 'package:prsample/screens/selectfiles.dart';
 import 'package:video_editor/video_editor.dart';
 
 class VideoEditor extends StatefulWidget {
-  const VideoEditor({super.key, required this.file, required this.collageFlag,this.videoDuration=20});
+  const VideoEditor(
+      {super.key,
+      required this.file,
+      required this.collageFlag,
+      this.videoDuration = 20});
 
   final File file;
   final bool collageFlag;
@@ -33,13 +37,13 @@ class _VideoEditorState extends State<VideoEditor> {
   late VideoEditorController _controller = VideoEditorController.file(
     widget.file,
     minDuration: const Duration(seconds: 1),
-    maxDuration:  Duration(seconds: widget.videoDuration),
+    maxDuration: Duration(seconds: widget.videoDuration+2),
   );
 
   /*Defining Two Paths because we cannot undo the filtering applied on Video So we make two paths for filtered & non-filtered videos*/
   late String toSavePath;
   String filteredToSavePath = '';
-
+  String singleAudAdjustedPath = '';
   bool filterLoading = false;
   int filterFlag = -1;
   bool audioLoading = false;
@@ -136,7 +140,7 @@ class _VideoEditorState extends State<VideoEditor> {
               audioLoading = false;
               _controller = VideoEditorController.file(File(outputPath),
                   minDuration: const Duration(seconds: 1),
-                  maxDuration: const Duration(seconds: 20));
+                  maxDuration:  Duration(seconds: widget.videoDuration+2));
               _controller
                   .initialize(aspectRatio: aspectratio)
                   .then((_) => setState(() {
@@ -178,9 +182,10 @@ class _VideoEditorState extends State<VideoEditor> {
         .showSnackBar(SnackBar(content: Text(finallvl.toString())));
 
     String videoPath = filterFlag == -1 ? toSavePath : filteredToSavePath;
+    singleAudAdjustedPath = '${directory.path}/clgaudtemporary.mp4';
 
     String commandtoExecute =
-        " -i $videoPath -i $globalAudiofilePath -filter_complex '[1:a]volume=${finallvl}[a]' -map 0:v -map '[a]' -c:v copy -c:a aac -y ${'${directory.path}/clgaudtemporary.mp4'}";
+        " -i $videoPath -i $globalAudiofilePath -filter_complex '[1:a]volume=$finallvl[a]' -map 0:v -map '[a]' -c:v copy -c:a aac -y $singleAudAdjustedPath";
 
     // log("Adjust Volume Command : ${commandtoExecute}");
     FFmpegKit.execute(commandtoExecute).then((session) async {
@@ -198,7 +203,7 @@ class _VideoEditorState extends State<VideoEditor> {
         _controller = VideoEditorController.file(
             File('${directory.path}/clgaudtemporary.mp4'),
             minDuration: const Duration(seconds: 1),
-            maxDuration: const Duration(seconds: 20));
+            maxDuration:  Duration(seconds: widget.videoDuration+2));
         _controller
             .initialize(aspectRatio: aspectratio)
             .then((value) => setState(() {
@@ -283,7 +288,7 @@ class _VideoEditorState extends State<VideoEditor> {
         audioLoading = false;
         _controller = VideoEditorController.file(File(outputPath),
             minDuration: const Duration(seconds: 1),
-            maxDuration: const Duration(seconds: 20));
+            maxDuration:  Duration(seconds: widget.videoDuration+2));
         _controller
             .initialize(aspectRatio: aspectratio)
             .then((_) => setState(() {
@@ -314,7 +319,7 @@ class _VideoEditorState extends State<VideoEditor> {
     setState(() {
       _controller = VideoEditorController.file(File(receivedFilterVidPath),
           minDuration: const Duration(seconds: 1),
-          maxDuration: const Duration(seconds: 20));
+          maxDuration:  Duration(seconds: widget.videoDuration+2));
       _controller.initialize(aspectRatio: aspectratio).then((_) => setState(() {
             filterFlag = -1;
           }));
@@ -385,7 +390,7 @@ class _VideoEditorState extends State<VideoEditor> {
         audioLoading = false;
         _controller = VideoEditorController.file(File(outputPath),
             minDuration: const Duration(seconds: 1),
-            maxDuration: const Duration(seconds: 20));
+            maxDuration:  Duration(seconds: widget.videoDuration+2));
         _controller
             .initialize(aspectRatio: aspectratio)
             .then((_) => setState(() {
@@ -613,14 +618,26 @@ class _VideoEditorState extends State<VideoEditor> {
                                       ),
                                       const Text(
                                         'Video Effects',
-                                        style: TextStyle(color: Colors.white),
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                        ),
                                       ),
                                       const SizedBox(
                                         height: 5,
                                       ),
                                       filterLoading
-                                          ? const CircularProgressIndicator(
-                                              color: Colors.white,
+                                          ? const SizedBox(
+                                              height: 30,
+                                              child: LoadingIndicator(
+                                                colors: [
+                                                  Colors.orange,
+                                                  Colors.red,
+                                                  Colors.yellow
+                                                ],
+                                                strokeWidth: 4,
+                                                indicatorType:
+                                                    Indicator.ballPulseSync,
+                                              ),
                                             )
                                           : videoEffectsWidget(),
                                       const SizedBox(
@@ -630,13 +647,15 @@ class _VideoEditorState extends State<VideoEditor> {
                                   ),
                                 ),
                               ),
-
                             ],
                           ),
                         ],
                       ),
                     )
-                  : const Center(child: CircularProgressIndicator()),
+                  : const Center(
+                      child: LoadingIndicator(
+                      indicatorType: Indicator.ballPulse,
+                    )),
             ),
           );
   }
@@ -670,7 +689,7 @@ class _VideoEditorState extends State<VideoEditor> {
                           _controller = VideoEditorController.file(
                               File(filteredToSavePath),
                               minDuration: const Duration(seconds: 1),
-                              maxDuration: const Duration(seconds: 20));
+                              maxDuration:  Duration(seconds: widget.videoDuration + 2));
                           _controller
                               .initialize(aspectRatio: aspectratio)
                               .then((_) => setState(() {}));
@@ -711,7 +730,7 @@ class _VideoEditorState extends State<VideoEditor> {
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: Container(
-              height: 40,
+              height: 30,
               width: 60,
               color: filterColors[filterFlag],
               child: Center(
@@ -748,7 +767,7 @@ class _VideoEditorState extends State<VideoEditor> {
                         builder: (_) => const SelectImageScreen())),
                 icon: const Icon(
                   Icons.arrow_back,
-                  color: Colors.white,
+                  color: Color.fromRGBO(255, 0, 92, 1),
                 ),
                 tooltip: 'Leave editor',
               ),
@@ -864,32 +883,48 @@ class _VideoEditorState extends State<VideoEditor> {
   double _rightSliderVolLvL = 0.5;
 
   Widget VerticalSlider() {
-    return RotatedBox(
-      quarterTurns: 3,
-      child: Slider(
-        // allowedInteraction: SliderInteraction.values.single,
-        label: 'Volume Level',
-        thumbColor: Colors.red,
-        value: _rightSliderVolLvL,
-        min: 0.0,
-        max: 2.0,
-        onChangeEnd: (newValue) {
-          _rightSliderVolLvL = newValue;
-          print(_rightSliderVolLvL.toString());
-          if (widget.collageFlag) {
-            adjustVolume(_rightSliderVolLvL);
-          } else {
-            adjustVolumefortwoAudios(_rightSliderVolLvL, _leftSliderVolLvl);
+    return Column(
+      children: [
+        IconButton(icon: const Icon(Icons.cancel_rounded,color: Colors.red,), onPressed: () {
+        setState(() {
+          if(filterFlag == -1){
+            toSavePath = singleAudAdjustedPath;
           }
-        },
-        activeColor: Colors.white,
-        inactiveColor: Colors.grey[300],
-        onChanged: (double value) {
-          setState(() {
-            _rightSliderVolLvL = value;
-          });
-        },
-      ),
+          else{
+            filteredToSavePath = singleAudAdjustedPath;
+          }
+          audioPicked = false;
+          log("Cross Pressed");
+        });
+                },),
+        RotatedBox(
+          quarterTurns: 3,
+          child: Slider(
+            // allowedInteraction: SliderInteraction.values.single,
+            label: 'Volume Level',
+            thumbColor: Colors.red,
+            value: _rightSliderVolLvL,
+            min: 0.0,
+            max: 2.0,
+            onChangeEnd: (newValue) {
+              _rightSliderVolLvL = newValue;
+              print(_rightSliderVolLvL.toString());
+              if (widget.collageFlag) {
+                adjustVolume(_rightSliderVolLvL);
+              } else {
+                adjustVolumefortwoAudios(_rightSliderVolLvL, _leftSliderVolLvl);
+              }
+            },
+            activeColor: Colors.white,
+            inactiveColor: Colors.grey[300],
+            onChanged: (double value) {
+              setState(() {
+                _rightSliderVolLvL = value;
+              });
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -928,13 +963,17 @@ class _VideoEditorState extends State<VideoEditor> {
     });
     final arguments = [
       '-y',
-      '-i', incomingVidPath,
-      '-vf', 'scale=1280:720',
-      '-preset', 'medium',
-      '-crf', '23',
-      '-c:a', 'aac',
+      '-i',
+      incomingVidPath,
+      '-vf',
+      'scale=1280:720',
+      '-preset',
+      'medium',
+      '-crf',
+      '23',
+      '-c:a',
+      'aac',
       '${directory.path}/scale-temporary.mp4'
-
     ];
     await FFmpegKit.executeWithArguments(arguments).then((session) async {
       ReturnCode? variable = await session.getReturnCode();
@@ -949,14 +988,11 @@ class _VideoEditorState extends State<VideoEditor> {
           _controller = VideoEditorController.file(
               File('/storage/emulated/0/Download/scaled.mp4'),
               minDuration: const Duration(seconds: 1),
-              maxDuration: const Duration(seconds: 20));
-          _controller
-              .initialize(aspectRatio: 16/9)
-              .then((_) => setState(() {
-            audioLoading = false;
-          }));
+              maxDuration:  Duration(seconds: widget.videoDuration + 2));
+          _controller.initialize(aspectRatio: 16 / 9).then((_) => setState(() {
+                audioLoading = false;
+              }));
         });
-
       } else {
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text("Some Error Occurred")));
@@ -968,7 +1004,9 @@ class _VideoEditorState extends State<VideoEditor> {
     });
   }
 
-  void showTextOverlayDialog(BuildContext context,) {
+  void showTextOverlayDialog(
+    BuildContext context,
+  ) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -977,62 +1015,62 @@ class _VideoEditorState extends State<VideoEditor> {
 
         // Determine if the current theme is dark or light
         final isDarkMode = theme.brightness == Brightness.dark;
-        return
-          AlertDialog(
-            backgroundColor:  Colors.red ,
-            title: const Text('Overlay Text'),
-            content: SizedBox(
-              height: 100,
-              width: 300,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 15),
-                child: TextFormField(
-                  style: const TextStyle(color: Colors.black ),
-                  controller: imgVidController,
-                  decoration: InputDecoration(
-                    filled: true,
-                      fillColor: Colors.white,
-                      hintText: 'Text to apply',
-                      hintStyle: const TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.w100),
-                      suffixIcon: IconButton(
-                        onPressed: () async {
-                          String textdonepath = await Navigator.push(context, MaterialPageRoute(builder: (_)=> VideoOverlayWidget(editingVidPath: toSavePath,text: imgVidController.text,)));
-                          if(filterFlag == -1){
-                            toSavePath = textdonepath;
-                          }
-                          else{
-                            filteredToSavePath = textdonepath;
-                          }
-                          setState(() {
-                            textTyping = false;
-                            _controller = VideoEditorController.file(
-                                File(textdonepath),
-                                minDuration: const Duration(seconds: 1),
-                                maxDuration:  Duration(seconds: widget.videoDuration));
-                            _controller
-                                .initialize(aspectRatio: aspectratio)
-                                .then((value) => setState(() {
+        return AlertDialog(
+          backgroundColor: Colors.red,
+          title: const Text('Overlay Text'),
+          content: SizedBox(
+            height: 100,
+            width: 300,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              child: TextFormField(
+                style: const TextStyle(color: Colors.black),
+                controller: imgVidController,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.white,
+                  hintText: 'Text to apply',
+                  hintStyle: const TextStyle(
+                      color: Colors.grey, fontWeight: FontWeight.w100),
+                  suffixIcon: IconButton(
+                    onPressed: () async {
+                      String textdonepath = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => VideoOverlayWidget(
+                                    editingVidPath: filterFlag == -1 ? toSavePath : filteredToSavePath,
+                                    text: imgVidController.text,
+                                  )));
+                      if (filterFlag == -1) {
+                        toSavePath = textdonepath;
+                      } else {
+                        filteredToSavePath = textdonepath;
+                      }
+                     setState(() {
+                       Navigator.pop(context);
+                       textTyping = false;
+                       _controller = VideoEditorController.file(
+                           File(textdonepath),
+                           minDuration: const Duration(seconds: 1),
+                           maxDuration:
+                           Duration(seconds: widget.videoDuration + 2));
+                       _controller
+                           .initialize(aspectRatio: aspectratio)
+                           .then((value) => setState(() {}));
+                     });
 
-                            }));
-                          });
-                          // applyTextOnVideo().then(
-                          //     (value) => setState(() {
-                          //           textTyping = false;
-                          //         }));
-                        },
-                        icon: const Icon(
-                          Icons.add_box,
-                          color: Colors.red,
-                        ),
-                      ),
-                     ),
+
+                    },
+                    icon: const Icon(
+                      Icons.add_box,
+                      color: Colors.red,
+                    ),
+                  ),
                 ),
               ),
             ),
-          );
+          ),
+        );
       },
     );
   }

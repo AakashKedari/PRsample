@@ -1,22 +1,10 @@
 import 'dart:async';
 import 'dart:developer';
-
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:connectivity_plus/connectivity_plus.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:prsample/screens/selectfiles.dart';
-
 import '../colors.dart';
-// import 'package:paper_reels/colors.dart';
-// import 'package:paper_reels/consts.dart';
-// import 'package:paper_reels/features/presentation/page/local_reel_screen/local_reel.dart';
-// import 'package:paper_reels/features/presentation/page/select_files/selectfiles.dart';
-// import 'package:paper_reels/features/services/notification_services/notification_services.dart';
-
-// User? user = FirebaseAuth.instance.currentUser;
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({
@@ -35,45 +23,12 @@ class SplashScreenState extends State<SplashScreen> {
 
     super.initState();
     Timer(const Duration(seconds: 3), (){
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SelectImageScreen()));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SelectImageScreen()));
     });
     // checkInternetConnectivity();
   }
 
-  // Future<void> checkInternetConnectivity() async {
-  //   var connectivityResult = await (Connectivity().checkConnectivity());
-  //
-  //   if (connectivityResult == ConnectivityResult.none) {
-  //     if (kDebugMode) {
-  //       print("Nointernet conection found");
-  //     }
-  //     // No internet connection, show a dialog
-  //     showDialog(
-  //       context: context,
-  //       barrierDismissible: false,
-  //       builder: (context) => AlertDialog(
-  //         title: Text('No Internet Connection'),
-  //         content: Text('Please check your internet connection and try again.'),
-  //         actions: <Widget>[
-  //           TextButton(
-  //             onPressed: () {
-  //               // Close the app if there's no internet connection
-  //               Navigator.of(context).pop();
-  //               SystemNavigator.pop();
-  //             },
-  //             child: Text('Exit'),
-  //           ),
-  //         ],
-  //       ),
-  //     );
-  //   } else {
-  //     // Internet connection is available, proceed with the splash screen
-  //     Timer(const Duration(seconds: 2), checkingTheSavedData);
-  //   }
-  // }
-
   void checkingTheSavedData() async {
-
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SelectImageScreen()));
     // Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => VideoScreen('')));
 
@@ -171,8 +126,6 @@ class SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    log(MediaQuery.of(context).size.height.toString());
-    log(MediaQuery.of(context).size.width.toString());
     return Scaffold(
       body: Center(
         child: Column(
