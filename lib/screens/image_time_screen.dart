@@ -31,13 +31,14 @@ class _ImageTimerState extends State<ImageTimer> {
 
   void convertImagetoVideo() async {
     Directory directory = await getTemporaryDirectory();
-    String output = '${directory.path}/temporary.mp4';
+    // String output = '${directory.path}/temporary.mp4';
+    String output = '/storage/emulated/0/Download/hojabhai.mp4';
 
     String genCommand = generalCommand(
             widget.ximages.length, widget.ximages, directory.path, durations) +
         output;
 
-    print("genCommand : $genCommand");
+    log("genCommand : $genCommand");
 
     Future.delayed(const Duration(seconds: 1));
     await FFmpegKit.execute(
@@ -57,7 +58,7 @@ class _ImageTimerState extends State<ImageTimer> {
                 builder: (_) => VideoEditor(
                       file: File(output),
                       collageFlag: true,
-                      videoDuration: totalTime,
+                      videoDuration: 18,
                     )));
       } else {
         setState(() {

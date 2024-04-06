@@ -9,13 +9,13 @@ import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 
 String generalCommand(
-    int n, List<XFile> photos, String tempDirectory, List<int> durations) {
+    int n, List<XFile> photos, String tempDirectory, List<int> durations)  {
 
   int totalImageSelected = n;
   String manualImagePaths = '';
 
   for (int i = 0; i < photos.length; i++) {
-    manualImagePaths = "$manualImagePaths-loop 1 -i ${photos[i].path} ";
+    manualImagePaths = "$manualImagePaths-loop 1 -t 5 -i ${photos[i].path} ";
   }
 
   String blendFilter() {
@@ -70,7 +70,7 @@ String generalCommand(
   }
 
   String command =
-      "-hide_banner -y $manualImagePaths-filter_complex \"${setptsFilter()}${padFilter()}${blendFilter()}${lastFilter()}concat=n=${((totalImageSelected - 1) * 2) + 1}:v=1:a=0,scale=w=720:h=1280,format=yuv420p[video]\" -map [video] -fps_mode cfr -c:v mpeg4 -b:v 10M -r 30 ";
+      "-hide_banner -y $manualImagePaths-filter_complex \"${setptsFilter()}${padFilter()}${blendFilter()}${lastFilter()}concat=n=${((totalImageSelected - 1) * 2) + 1}:v=1:a=0,scale=w=720:h=1280,format=yuv420p[video]\" -map [video] -fps_mode cfr -c:v mpeg4 -b:v 10M ";
 
   var logger = Logger();
   logger.d(command);

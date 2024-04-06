@@ -3,10 +3,8 @@ import 'package:ffmpeg_kit_flutter_full/ffmpeg_kit_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:prsample/screens/drag_screen.dart';
+import 'package:prsample/screens/pracWidget.dart';
 import 'package:prsample/screens/splash_screen.dart';
-import 'package:prsample/screens/textoverlayscreen.dart';
-import 'package:prsample/screens/two_audio.dart';
 import 'package:prsample/themes.dart';
 
 Future<void> main() async {
@@ -38,7 +36,7 @@ class MyApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       // themeMode: ThemeMode.dark,
       debugShowCheckedModeBanner: false,
-      home:  SplashScreen(),
+      home:  const SplashScreen(),
     );
   }
 }

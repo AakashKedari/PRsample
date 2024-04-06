@@ -42,12 +42,11 @@ class _CachedVideosState extends State<CachedVideos> {
   }
 
 
-
-
-
+  SwiperController swiperController =  SwiperController();
   List<File> fetchedVids = [];
   @override
   void initState() {
+
     super.initState();
     getEditedVideos();
   }
@@ -59,6 +58,9 @@ class _CachedVideosState extends State<CachedVideos> {
         body: fetchedVids.isEmpty ? const Center(
           child: Text('Nothing Created Yet'),
         ) :  Swiper(
+          autoplay: true,
+          autoplayDelay: 12000,
+          controller: swiperController,
           loop: false,
           scrollDirection: Axis.vertical,
           itemCount: fetchedVids.length,
@@ -68,12 +70,7 @@ class _CachedVideosState extends State<CachedVideos> {
           pagination: const SwiperPagination(),
       
         )
-        // ListView.builder(
-        //   shrinkWrap: true,
-        //     itemCount: fetchedVids.length,
-        //     itemBuilder: (context, index) {
-        //   return VideoPlayerItem(videoFile: fetchedVids[index]);
-        // }),
+
       ),
     );
   }
@@ -87,65 +84,6 @@ class VideoPlayerItem extends StatefulWidget {
   @override
   _VideoPlayerItemState createState() => _VideoPlayerItemState();
 }
-
-
-
-//
-// class _VideoPlayerItemState extends State<VideoPlayerItem> {
-//   late VideoPlayerController _controller;
-//   late ChewieController _chewieController;
-//
-//   @override
-//   void initState() {
-//     super.initState();
-//     _controller = VideoPlayerController.file(widget.videoFile);
-//     _chewieController = ChewieController(
-//       videoPlayerController: _controller,
-//       autoPlay: true,
-//       looping: true,
-//       // Other ChewieController configurations as needed
-//     );
-//   }
-//
-//   @override
-//   void dispose() {
-//     _controller.dispose();
-//     _chewieController.dispose();
-//     super.dispose();
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return GestureDetector(
-//       onTap: () {
-//         setState(() {
-//           if (_controller.value.isPlaying) {
-//             _controller.pause();
-//           } else {
-//             _controller.play();
-//           }
-//         });
-//       },
-//       child: FutureBuilder(
-//         future: _controller.initialize(),
-//         builder: (context, snapshot) {
-//           if (snapshot.connectionState == ConnectionState.done) {
-//             return AspectRatio(
-//               aspectRatio: _controller.value.aspectRatio,
-//               child: Chewie(
-//                 controller: _chewieController,
-//               ),
-//             );
-//           } else {
-//             return Center(child: CircularProgressIndicator());
-//           }
-//         },
-//       ),
-//     );
-//   }
-// }
-
-
 
 class _VideoPlayerItemState extends State<VideoPlayerItem> {
   late VideoPlayerController _controller;
