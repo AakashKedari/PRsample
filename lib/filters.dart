@@ -89,7 +89,6 @@ Future<String> applyFilters(String toSavePath, int filterNumber) async {
   String? result;
 
   // Command to apply pink color effect
-
   // ' -i ${inputPath} -vf colorbalance=rs=0.7:gs=0.9 ${outputPath}';
 
   final String command = filterNumber == 1
@@ -97,7 +96,7 @@ Future<String> applyFilters(String toSavePath, int filterNumber) async {
       : filterNumber == 2
           ? // Retro
           " -i $inputPath -vf curves=blue='0/0 0.5/0.58 1/1' -b:v 10M -y $outputPath"
-          : // Execute Curves
+          : filterNumber == 3 ? '-i $inputPath -vf format=gray -b:v 10M -y $outputPath' : filterNumber == 4 ? "-i $inputPath -vf 'colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131' -y $outputPath" :// Execute Curves
           " -i $inputPath -vf noise=alls=60:allf=t+u -b:v 10M  -y $outputPath";
   await FFmpegKit.execute(command).then((session) async {
     ReturnCode? variable = await session.getReturnCode();
@@ -119,22 +118,3 @@ Future<String> applyFilters(String toSavePath, int filterNumber) async {
   return result ?? 'Returning Empty String';
 }
 
-//
-// String genCommand = "-hide_banner -y " +
-//     manualImagePaths +
-//     "-filter_complex " +
-//     "\"[0:v]setpts=PTS-STARTPTS,scale=w='if(gte(iw/ih,720/1280),min(iw,720),-1)':h='if(gte(iw/ih,720/1280),-1,min(ih,1280))',scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=sar=1/1,split=2[stream1out1][stream1out2];" +
-//     "[1:v]setpts=PTS-STARTPTS,scale=w='if(gte(iw/ih,720/1280),min(iw,720),-1)':h='if(gte(iw/ih,720/1280),-1,min(ih,1280))',scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=sar=1/1,split=2[stream2out1][stream2out2];" +
-//     "[2:v]setpts=PTS-STARTPTS,scale=w='if(gte(iw/ih,720/1280),min(iw,720),-1)':h='if(gte(iw/ih,720/1280),-1,min(ih,1280))',scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=sar=1/1,split=2[stream3out1][stream3out2];" +
-//     "[stream1out1]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=3,select=lte(n\\,90)[stream1overlaid];" +
-//     "[stream1out2]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30)[stream1ending];" +
-//     "[stream2out1]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=2,select=lte(n\\,60)[stream2overlaid];" +
-//     "[stream2out2]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30),split=2[stream2starting][stream2ending];" +
-//     "[stream3out1]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=2,select=lte(n\\,60)[stream3overlaid];" +
-//     "[stream3out2]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=#00000000,trim=duration=1,select=lte(n\\,30)[stream3starting];" +
-//     "[stream2starting][stream1ending]blend=all_expr='if(gte(X,(W/2)*T/1)*lte(X,W-(W/2)*T/1),B,A)':shortest=1[stream2blended];" +
-//     "[stream3starting][stream2ending]blend=all_expr='if(gte(X,(W/2)*T/1)*lte(X,W-(W/2)*T/1),B,A)':shortest=1[stream3blended];" +
-//     "[stream1overlaid][stream2blended][stream2overlaid][stream3blended][stream3overlaid]concat=n=5:v=1:a=0,format=yuv420p[video]\"" +
-//     " -map [video] -fps_mode cfr " +
-//     "-c:v mpeg4 -b:v 10M -r 30 " +  // Adjust bitrate and codec settings for better quality
-//     output;

@@ -35,7 +35,7 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.6
-  ffmpeg_kit_flutter_full: 6.0.3-LTS
+  ffmpeg_kit_flutter_full: any
   permission_handler: ^11.3.0
   path_provider: ^2.1.2
   video_player: ^2.8.2
@@ -45,10 +45,10 @@ dependencies:
   google_fonts: ^4.0.4
   file_picker: ^6.1.1
   tapioca: ^1.0.6+1
-  ffmpeg_cmds: ^0.0.1
   card_swiper: ^3.0.1
   crop_your_image: ^1.0.2
   loading_indicator: ^3.1.1
+  easy_audio_trimmer: any
 
 
 dev_dependencies:
@@ -95,6 +95,9 @@ flutter:
     - family: OpenSans
       fonts:
         - asset: assets/opensans.ttf
+    - family: Cedarville_Cursive
+      fonts:
+        - asset: assets/Cedarville_Cursive.ttf
   #   - family: Schyler
   #     fonts:
   #       - asset: fonts/Schyler-Regular.ttf

@@ -8,8 +8,10 @@ import 'package:ffmpeg_kit_flutter_full/log.dart';
 import 'package:ffmpeg_kit_flutter_full/return_code.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:loading_indicator/loading_indicator.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:prsample/constants.dart';
 import 'package:prsample/customWidgets/loading_indicators.dart';
 import 'package:video_player/video_player.dart';
 
@@ -33,9 +35,31 @@ class _VideoOverlayWidgetState extends State<VideoOverlayWidget> {
 
   }
 
+  Future<String> getFontPath(String fontName) async {
+    final ByteData data = await rootBundle.load('assets/$fontName.ttf');
+    final Directory directory = await getApplicationDocumentsDirectory();
+    final File fontFile = File('${directory.path}/YourFont.ttf');
+    await fontFile.writeAsBytes(data.buffer.asUint8List(), flush: true);
+    return fontFile.path; // This gives you the absolute path to the font file.
+  }
+
+  String? getColorName(Map<String, Color> map, Color color) {
+    // Iterate over the map
+    for (var entry in map.entries) {
+      // Check if the value matches the provided color
+      if (entry.value == color) {
+        // Return the corresponding key
+        return entry.key;
+      }
+    }
+    // If no match found, return null
+    return null;
+  }
+
   bool exportFlag = false;
   @override
   void initState() {
+
     super.initState();
     _controller = VideoPlayerController.file(File(widget.editingVidPath))
       ..initialize().then((_) {
@@ -76,7 +100,7 @@ class _VideoOverlayWidgetState extends State<VideoOverlayWidget> {
             child: Draggable(
               feedback: Material(
                 color: Colors.transparent,
-                child: Text(widget.text,style: const TextStyle(fontSize: 30,color: Colors.orange)),
+                child: Text(widget.text,style: widget.textStyle),
               ),
               onDragEnd: (details) {
                 setState(() {
@@ -87,7 +111,7 @@ class _VideoOverlayWidgetState extends State<VideoOverlayWidget> {
               },
               child: Material(
                 color: Colors.transparent,
-                child: Text(widget.text,style: const TextStyle(fontSize: 30,color: Colors.orange),),
+                child: Text(widget.text,style: widget.textStyle),
               ),
             ),
           ),
@@ -112,9 +136,12 @@ class _VideoOverlayWidgetState extends State<VideoOverlayWidget> {
           Directory directory = await getTemporaryDirectory();
           String tempTextOverlayPath =
           '${directory.path}/texttemporary.mp4';
-          String textApplyCommand = ' -i ${widget.editingVidPath} -vf "drawtext=text='
+          String fontFilePath =await getFontPath(widget.textStyle.fontFamily!);
+          String? textColor = getColorName(colorMap, widget.textStyle.color!);
+
+          String textApplyCommand = ' -i ${widget.editingVidPath} -vf "drawtext=fontfile=${fontFilePath}:text='
               "${widget.text}"
-              ':fontcolor=orange:fontsize=40:x=${vidExactx+20}:y=${vidExacty+85}" -c:a copy -b:v 10M -y $tempTextOverlayPath';
+              ':fontcolor=$textColor:fontsize=${widget.textStyle.fontSize!+10}:x=${vidExactx+20}:y=${vidExacty+85}" -c:a copy -b:v 10M -y $tempTextOverlayPath';
 
           log(textApplyCommand);
 

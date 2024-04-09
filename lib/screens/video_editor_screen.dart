@@ -11,9 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:loading_indicator/loading_indicator.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:prsample/constants.dart';
-import 'package:prsample/customWidgets/colorDropDownWidget.dart';
 import 'package:prsample/customWidgets/loading_indicators.dart';
-import 'package:prsample/customWidgets/sizeDropDownbutton.dart';
 import 'package:prsample/filters.dart';
 import 'package:prsample/screens/drag_screen.dart';
 import 'package:prsample/screens/selectfiles.dart';
@@ -41,7 +39,7 @@ class _VideoEditorState extends State<VideoEditor> {
   late VideoEditorController _controller = VideoEditorController.file(
     widget.file,
     minDuration: const Duration(seconds: 1),
-    maxDuration: Duration(seconds: widget.videoDuration+2),
+    maxDuration: Duration(seconds: widget.videoDuration),
   );
 
   /*Defining Two Paths because we cannot undo the filtering applied on Video So we make two paths for filtered & non-filtered videos*/
@@ -58,6 +56,9 @@ class _VideoEditorState extends State<VideoEditor> {
   late double aspectratio;
   bool scaleAdjust = false;
   bool saveFlag = false;
+  String selectedColor = 'White';
+  String fontSize = '21';
+  String font = 'openSans';
 
   @override
   void initState() {
@@ -145,7 +146,7 @@ class _VideoEditorState extends State<VideoEditor> {
               audioLoading = false;
               _controller = VideoEditorController.file(File(outputPath),
                   minDuration: const Duration(seconds: 1),
-                  maxDuration:  Duration(seconds: widget.videoDuration+2));
+                  maxDuration: Duration(seconds: widget.videoDuration + 2));
               _controller
                   .initialize(aspectRatio: aspectratio)
                   .then((_) => setState(() {
@@ -178,7 +179,6 @@ class _VideoEditorState extends State<VideoEditor> {
   Future<void> adjustVolume(double level) async {
     setState(() {
       audioLoading = true;
-
     });
     Directory directory = await getTemporaryDirectory();
     String big = level.toStringAsFixed(2);
@@ -202,7 +202,7 @@ class _VideoEditorState extends State<VideoEditor> {
         _controller = VideoEditorController.file(
             File('${directory.path}/clgaudtemporary.mp4'),
             minDuration: const Duration(seconds: 1),
-            maxDuration:  Duration(seconds: widget.videoDuration+2));
+            maxDuration: Duration(seconds: widget.videoDuration + 2));
         _controller
             .initialize(aspectRatio: aspectratio)
             .then((value) => setState(() {
@@ -222,7 +222,6 @@ class _VideoEditorState extends State<VideoEditor> {
     });
   }
 
-
   Future<void> adjustVolumefortwoAudios(
       double primaryAudLvl, double secondaryAudLvl) async {
     String big = primaryAudLvl.toStringAsFixed(2);
@@ -235,7 +234,7 @@ class _VideoEditorState extends State<VideoEditor> {
     });
     try {
       final String videoPath =
-      filterFlag == -1 ? toSavePath : filteredToSavePath;
+          filterFlag == -1 ? toSavePath : filteredToSavePath;
       final String audioPath = globalAudiofilePath;
       // String outputPath =
       //     '${directory.path}/twoaudtemporary.mp4'; // Path to save the resulting video file
@@ -254,7 +253,7 @@ class _VideoEditorState extends State<VideoEditor> {
         '[aout]',
         '-c:v',
         'copy',
-         doubleAudAdjustedPath
+        doubleAudAdjustedPath
       ];
 
       for (int i = 0; i < arguments.length; i++) {
@@ -281,14 +280,15 @@ class _VideoEditorState extends State<VideoEditor> {
         _controller.dispose();
 
         audioLoading = false;
-        _controller = VideoEditorController.file(File('${directory.path}/twoaudtemporary.mp4'),
+        _controller = VideoEditorController.file(
+            File('${directory.path}/twoaudtemporary.mp4'),
             minDuration: const Duration(seconds: 1),
-            maxDuration:  Duration(seconds: widget.videoDuration+2));
+            maxDuration: Duration(seconds: widget.videoDuration + 2));
         _controller
             .initialize(aspectRatio: aspectratio)
             .then((_) => setState(() {
-          audioPicked = true;
-        }));
+                  audioPicked = true;
+                }));
       } else {
         setState(() {
           audioLoading = false;
@@ -362,7 +362,7 @@ class _VideoEditorState extends State<VideoEditor> {
 
       if (variable!.isValueSuccess()) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("Audio Success")));
+            .showSnackBar(const SnackBar(content: Text("Audio Success")));
         globalAudiofilePath = audioFile!.path;
         print('Custom audio added successfully');
         if (filterFlag == -1) {
@@ -375,7 +375,7 @@ class _VideoEditorState extends State<VideoEditor> {
         audioLoading = false;
         _controller = VideoEditorController.file(File(outputPath),
             minDuration: const Duration(seconds: 1),
-            maxDuration:  Duration(seconds: widget.videoDuration+2));
+            maxDuration: Duration(seconds: widget.videoDuration + 2));
         _controller
             .initialize(aspectRatio: aspectratio)
             .then((_) => setState(() {
@@ -406,13 +406,12 @@ class _VideoEditorState extends State<VideoEditor> {
     setState(() {
       _controller = VideoEditorController.file(File(receivedFilterVidPath),
           minDuration: const Duration(seconds: 1),
-          maxDuration:  Duration(seconds: widget.videoDuration+2));
+          maxDuration: Duration(seconds: widget.videoDuration + 2));
       _controller.initialize(aspectRatio: aspectratio).then((_) => setState(() {
             filterFlag = -1;
           }));
     });
   }
-
 
   Future<void> saveEditedVideo() async {
     setState(() {
@@ -435,7 +434,6 @@ class _VideoEditorState extends State<VideoEditor> {
       ReturnCode? variable = await session.getReturnCode();
 
       if (variable?.isValueSuccess() == true) {
-       
         ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Video Trimmed and Cached")));
         Navigator.pushReplacement(context,
@@ -459,16 +457,15 @@ class _VideoEditorState extends State<VideoEditor> {
   @override
   Widget build(BuildContext context) {
     return audioLoading
-        ?  Scaffold(
+        ? Scaffold(
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(
-                      height: 80,child: ballClipRoateWidget()),
+                  SizedBox(height: 80, child: ballClipRoateWidget()),
                   Text(
                     scaleAdjust ? 'Adjusting Scale' : 'Inserting Audio',
-                    style: const TextStyle(color:  Color(0xFFFF005C)),
+                    style: const TextStyle(color: Color(0xFFFF005C)),
                   )
                 ],
               ),
@@ -600,11 +597,12 @@ class _VideoEditorState extends State<VideoEditor> {
                                                   Text(
                                                     'Trim ',
                                                     style: TextStyle(
-                                                        color:  Color(0xFFFF005C) ),
+                                                        color:
+                                                            Color(0xFFFF005C)),
                                                   ),
                                                   Icon(
                                                     Icons.cut,
-                                                    color:  Color(0xFFFF005C),
+                                                    color: Color(0xFFFF005C),
                                                   )
                                                 ],
                                               ),
@@ -622,7 +620,7 @@ class _VideoEditorState extends State<VideoEditor> {
                                       const Text(
                                         'Video Effects',
                                         style: TextStyle(
-                                          color:  Color(0xFFFF005C),
+                                          color: Color(0xFFFF005C),
                                         ),
                                       ),
                                       const SizedBox(
@@ -692,7 +690,8 @@ class _VideoEditorState extends State<VideoEditor> {
                           _controller = VideoEditorController.file(
                               File(filteredToSavePath),
                               minDuration: const Duration(seconds: 1),
-                              maxDuration:  Duration(seconds: widget.videoDuration + 2));
+                              maxDuration:
+                                  Duration(seconds: widget.videoDuration + 2));
                           _controller
                               .initialize(aspectRatio: aspectratio)
                               .then((_) => setState(() {}));
@@ -889,18 +888,23 @@ class _VideoEditorState extends State<VideoEditor> {
     return Column(
       children: [
         if (widget.collageFlag == true)
-          IconButton(icon: const Icon(Icons.cancel_rounded,color: Colors.red,), onPressed: () {
-        setState(() {
-          if(filterFlag == -1){
-            toSavePath = singleAudAdjustedPath;
-          }
-          else{
-            filteredToSavePath = singleAudAdjustedPath;
-          }
-          audioPicked = false;
-          log("Cross Pressed");
-        });
-                },),
+          IconButton(
+            icon: const Icon(
+              Icons.cancel_rounded,
+              color: Colors.red,
+            ),
+            onPressed: () {
+              setState(() {
+                if (filterFlag == -1) {
+                  toSavePath = singleAudAdjustedPath;
+                } else {
+                  filteredToSavePath = singleAudAdjustedPath;
+                }
+                audioPicked = false;
+                log("Cross Pressed");
+              });
+            },
+          ),
         RotatedBox(
           quarterTurns: 3,
           child: Slider(
@@ -935,18 +939,23 @@ class _VideoEditorState extends State<VideoEditor> {
   Widget LeftVerticalSlider() {
     return Column(
       children: [
-        IconButton(icon: const Icon(Icons.cancel_rounded,color: Colors.red,), onPressed: () {
-          setState(() {
-            if(filterFlag == -1){
-              toSavePath = doubleAudAdjustedPath;
-            }
-            else{
-              filteredToSavePath = doubleAudAdjustedPath;
-            }
-            audioPicked = false;
-            log("Cross Pressed");
-          });
-        },),
+        IconButton(
+          icon: const Icon(
+            Icons.cancel_rounded,
+            color: Colors.red,
+          ),
+          onPressed: () {
+            setState(() {
+              if (filterFlag == -1) {
+                toSavePath = doubleAudAdjustedPath;
+              } else {
+                filteredToSavePath = doubleAudAdjustedPath;
+              }
+              audioPicked = false;
+              log("Cross Pressed");
+            });
+          },
+        ),
         RotatedBox(
           quarterTurns: 3,
           child: Slider(
@@ -994,19 +1003,21 @@ class _VideoEditorState extends State<VideoEditor> {
       '${directory.path}/scale-temporary.mp4'
     ];
     await FFmpegKit.executeWithArguments(arguments).then((session) async {
-
       ReturnCode? variable = await session.getReturnCode();
 
       if (variable?.isValueSuccess() == true) {
-        FFprobeKit.getMediaInformationAsync('${directory.path}/scale-temporary.mp4', (session) async {
-          final information = (session).getMediaInformation()!;
-          int h = information.getAllProperties()!['streams'][0]['height'];
-          vidHeight = h.toDouble();
-          int w = information.getAllProperties()!['streams'][0]['width'];
-          vidWidth = w.toDouble();
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text("height : ${vidHeight} & Width : $vidWidth")));
-        },);
+        FFprobeKit.getMediaInformationAsync(
+          '${directory.path}/scale-temporary.mp4',
+          (session) async {
+            final information = (session).getMediaInformation()!;
+            int h = information.getAllProperties()!['streams'][0]['height'];
+            vidHeight = h.toDouble();
+            int w = information.getAllProperties()!['streams'][0]['width'];
+            vidWidth = w.toDouble();
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text("height : ${vidHeight} & Width : $vidWidth")));
+          },
+        );
         vidWidth = 720;
         vidHeight = 1280;
         double bigValue = vidWidth / vidHeight; // Example double value
@@ -1017,8 +1028,8 @@ class _VideoEditorState extends State<VideoEditor> {
           _controller = VideoEditorController.file(
               File('${directory.path}/scale-temporary.mp4'),
               minDuration: const Duration(seconds: 1),
-              maxDuration:  const Duration(seconds: 20));
-          _controller.initialize(aspectRatio: 9/16).then((_) => setState(() {
+              maxDuration: const Duration(seconds: 20));
+          _controller.initialize(aspectRatio: 9 / 16).then((_) => setState(() {
                 audioLoading = false;
               }));
         });
@@ -1037,87 +1048,149 @@ class _VideoEditorState extends State<VideoEditor> {
     BuildContext context,
   ) {
     showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        // Get the current theme data
-        final theme = Theme.of(context);
+        context: context,
+        builder: (BuildContext context) {
+          // Get the current theme data
+          final theme = Theme.of(context);
 
-        // Determine if the current theme is dark or light
-        final isDarkMode = theme.brightness == Brightness.dark;
-        return AlertDialog(
-          backgroundColor: Colors.red,
-          title: const Text('Overlay Text'),
-          content: SizedBox(
-            height: 800,
-            width: 800,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
-                  child:
-                      TextFormField(
-                        style: const TextStyle(color: Colors.black),
-                        controller: imgVidController,
-                        decoration: InputDecoration(
+
+          // Determine if the current theme is dark or light
+          final isDarkMode = theme.brightness == Brightness.dark;
+          return AlertDialog(
+            backgroundColor: Colors.red,
+            title: const Text('Overlay Text'),
+            content: SizedBox(
+              width:
+                  MediaQuery.of(context).size.width, // Adjust width as needed
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: imgVidController,
+                    style: TextStyle(color: Colors.black87),
+                      decoration: const InputDecoration(
                           filled: true,
                           fillColor: Colors.white,
                           hintText: 'Text to apply',
-                          hintStyle: const TextStyle(
+                          hintStyle:  TextStyle(
                               color: Colors.grey, fontWeight: FontWeight.w100),
-                          suffixIcon: IconButton(
-                            onPressed: () async {
-                              String textdonepath = await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (_) => VideoOverlayWidget(
-                                            editingVidPath: filterFlag == -1 ? toSavePath : filteredToSavePath,
-                                            text: imgVidController.text,textStyle: TextStyle(),
-                                          )));
-                              if (filterFlag == -1) {
-                                toSavePath = textdonepath;
-                              } else {
-                                filteredToSavePath = textdonepath;
-                              }
-                             setState(() {
-                               Navigator.pop(context);
 
-                               _controller = VideoEditorController.file(
-                                   File(textdonepath),
-                                   minDuration: const Duration(seconds: 1),
-                                   maxDuration:
-                                   Duration(seconds: widget.videoDuration + 2));
-                               _controller
-                                   .initialize(aspectRatio: aspectratio)
-                                   .then((value) => setState(() {}));
-                             });
+                          )),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    height: 40,
+                    child: Center(
+                      child: DropdownButton(
+                        value: font,
+                        hint: const Text('Font'),
+                        items: fonts
+                            .map((String value) {
+                          return DropdownMenuItem(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            font = value!;
+                          });
+                          Navigator.pop(context);
+                          showTextOverlayDialog(context);
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    height: 40,
+                    child: Center(
+                      child: DropdownButton(
+                        value: fontSize,
+                        hint: const Text('FontSize'),
+                        items: fontSizes.map((String value) {
+                          return DropdownMenuItem(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (selection) {
+                          setState(() {
+                            fontSize = selection!;
+                            log('fontSize : ${fontSize}');
+                            Navigator.pop(context);
+                            showTextOverlayDialog(context);
 
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height:20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Container(height : 40,width:40,color:colorMap[selectedColor]),
+                      SizedBox(
+                        height: 40,
+                        child: Center(
+                          child: DropdownButton(
+                            value: selectedColor,
+                            hint: const Text('Color'),
+                            items: textColors.map((String value) {
+                              return DropdownMenuItem(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            onChanged: (selection) {
+                              setState(() {
+                                selectedColor = selection!;
+                                log('fontSize : ${fontSize}');
+                                Navigator.pop(context);
+                                showTextOverlayDialog(context);
 
+                              });
                             },
-                            icon: const Icon(
-                              Icons.add_box,
-                              color: Colors.red,
-                            ),
                           ),
                         ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 20,),
+                  Center(child: ElevatedButton(onPressed: () async {
+                    String textdonepath = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => VideoOverlayWidget(
+                              editingVidPath: filterFlag == -1
+                                  ? toSavePath
+                                  : filteredToSavePath,
+                              text: imgVidController.text,
+                              textStyle: TextStyle(fontFamily: font,fontSize: double.parse(fontSize),color: colorMap[selectedColor]),
+                            )));
+                    if (filterFlag == -1) {
+                      toSavePath = textdonepath;
+                    } else {
+                      filteredToSavePath = textdonepath;
+                    }
+                    setState(() {
+                      Navigator.pop(context);
 
-                ),
-                  Container(
-                      width: 50,
-                      height: 30,
-                      child: IntegerDropdownButton()),
-                  Container(
-                      width: 50,
-                      height: 30,
-                      child: ColorDropdownButton())
-
-              ],
+                      _controller = VideoEditorController.file(
+                          File(textdonepath),
+                          minDuration: const Duration(seconds: 1),
+                          maxDuration: Duration(
+                              seconds: widget.videoDuration + 2));
+                      _controller
+                          .initialize(aspectRatio: aspectratio)
+                          .then((value) => setState(() {}));
+                    });
+                  },child :  (const Text('Apply'))))
+                ],
+              ),
             ),
-          ),
-        );
-      },
-    );
+
+          );
+        });
   }
 }
