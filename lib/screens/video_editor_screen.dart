@@ -1,5 +1,10 @@
 import 'dart:developer';
 import 'dart:io';
+// import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
+// import 'package:ffmpeg_kit_flutter/ffprobe_kit.dart';
+// import 'package:ffmpeg_kit_flutter/log.dart';
+// import 'package:ffmpeg_kit_flutter/return_code.dart';
+// import 'package:ffmpeg_kit_flutter/session.dart';
 import 'package:ffmpeg_kit_flutter_full/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_full/ffprobe_kit.dart';
 import 'package:ffmpeg_kit_flutter_full/log.dart';
@@ -13,16 +18,20 @@ import 'package:path_provider/path_provider.dart';
 import 'package:prsample/constants.dart';
 import 'package:prsample/customWidgets/loading_indicators.dart';
 import 'package:prsample/filters.dart';
+import 'package:prsample/screens/audio_trimmer_view.dart';
 import 'package:prsample/screens/drag_screen.dart';
 import 'package:prsample/screens/selectfiles.dart';
 import 'package:video_editor/video_editor.dart';
+
+import '../audio_trimmer/trim_viewer.dart';
+import '../audio_trimmer/trimmer.dart';
 
 class VideoEditor extends StatefulWidget {
   const VideoEditor(
       {super.key,
       required this.file,
       required this.collageFlag,
-      this.videoDuration = 20});
+      this.videoDuration = 30});
 
   final File file;
   final bool collageFlag;
@@ -109,21 +118,23 @@ class _VideoEditorState extends State<VideoEditor> {
       FilePickerResult? pickedFiles = await FilePicker.platform
           .pickFiles(allowMultiple: false, type: FileType.audio);
 
-      if (pickedFiles != null) {
-        // Get the first selected file
-        final file = File(pickedFiles.files.first.path!);
+      if (pickedFiles != null && mounted) {
+        String newFilePath = await Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => AudioTrimmerView(
+                      file: File(pickedFiles.files.first.path!),
+                      time: widget.videoDuration,
+                    )));
 
-        // Define a new file path in the cache directory
-        final String newFilePath =
-            '${directory.path}/copied_audio.mp3'; // You can change the file extension as per your audio file type
-
-        // Copy the file to the cache directory
-        await file.copy(newFilePath);
-
-        // Below command to replace a video's sound
         String outputPath = '${directory.path}/audtemporary.mp4';
+
+        /// Here we introduce the Dialog Box for Audio Adjustments
+        // showAudioOverlayDialog(context,newFilePath);
+
         String choosingInputFile =
             filterFlag == -1 ? toSavePath : filteredToSavePath;
+
         String commandtoExecute =
             " -i $choosingInputFile -i $newFilePath -filter_complex '[1:a]volume=0.5[a]' -map 0:v -map '[a]' -c:v copy -b:v 10M -c:a aac -y $outputPath";
 
@@ -222,6 +233,98 @@ class _VideoEditorState extends State<VideoEditor> {
     });
   }
 
+  void pickAudioForRealVideo() async {
+    Directory directory = await getTemporaryDirectory();
+    File? audioFile;
+    setState(() {
+      audioLoading = true;
+    });
+      FilePickerResult? pickedFile = await FilePicker.platform
+          .pickFiles(allowMultiple: false, type: FileType.audio);
+      if(pickedFile != null){
+        String audioPath = await Navigator.push(context, MaterialPageRoute(builder: (_)=> AudioTrimmerView(time: widget.videoDuration, file: File(pickedFile.files.first.path!))));
+        final String videoPath =
+        filterFlag == -1 ? toSavePath : filteredToSavePath;
+
+        String outputPath =
+            '${directory.path}/dualaudtemporary.mp4'; // Path to save the resulting video file
+
+        final arguments = [
+          '-y',
+          '-i',
+          videoPath,
+          '-i',
+          audioPath,
+          '-filter_complex',
+          '[0:a]volume=1.0[a1];[1:a]volume=1.0[a2];[a1][a2]amix=inputs=2:duration=first[aout]',
+          '-map',
+          '0:v',
+          '-map',
+          '[aout]',
+          '-c:v',
+          'copy',
+          '-c:a',
+          'aac',
+          '-strict',
+          'experimental',
+          outputPath
+        ];
+
+        Session session = await FFmpegKit.executeWithArguments(arguments);
+        ReturnCode? variable = await session.getReturnCode();
+
+        if (variable!.isValueSuccess()) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text("Audio Success")));
+          // globalAudiofilePath = audioFile!.path;
+          globalAudiofilePath = audioPath;
+          log('Custom audio added successfully');
+          if (filterFlag == -1) {
+            toSavePath = outputPath;
+          } else {
+            filteredToSavePath = outputPath;
+          }
+          globalAudiofilePath = audioPath;
+
+          audioLoading = false;
+          setState(() {
+            _controller = VideoEditorController.file(File(outputPath),
+                minDuration: const Duration(seconds: 1),
+                maxDuration: Duration(seconds: widget.videoDuration + 2));
+            _controller
+                .initialize(aspectRatio: aspectratio)
+                .then((_) => setState(() {
+              audioPicked = true;
+            }));
+          });
+
+        } else {
+          setState(() {
+            audioLoading = false;
+          });
+          print('Dual Audio Failed');
+          final List<Log> info = await session.getAllLogs();
+          for (int i = 0; i < info.length; i++) {
+            print(info[i].getMessage());
+          }
+
+      }
+
+      }
+      // // Get the first selected file
+      // audioFile = File(pickedFile!.files.first.path!);
+      //
+      // // Define a new file path in the cache directory
+      // final String newFilePath =
+      //     '${directory.path}/copied_audio.mp3'; // You can change the file extension as per your audio file type
+      //
+      // // Copy the file to the cache directory
+      // await audioFile.copy(newFilePath);
+
+
+
+  }
+
   Future<void> adjustVolumefortwoAudios(
       double primaryAudLvl, double secondaryAudLvl) async {
     String big = primaryAudLvl.toStringAsFixed(2);
@@ -310,96 +413,6 @@ class _VideoEditorState extends State<VideoEditor> {
     }
   }
 
-  void pickAudioForRealVideo() async {
-    Directory directory = await getTemporaryDirectory();
-    File? audioFile;
-    setState(() {
-      audioLoading = true;
-    });
-    try {
-      FilePickerResult? pickedFile = await FilePicker.platform
-          .pickFiles(allowMultiple: false, type: FileType.audio);
-
-      // Get the first selected file
-      audioFile = File(pickedFile!.files.first.path!);
-
-      // Define a new file path in the cache directory
-      final String newFilePath =
-          '${directory.path}/copied_audio.mp3'; // You can change the file extension as per your audio file type
-
-      // Copy the file to the cache directory
-      await audioFile.copy(newFilePath);
-
-      final String videoPath =
-          filterFlag == -1 ? toSavePath : filteredToSavePath;
-      final String audioPath = newFilePath;
-      String outputPath =
-          '${directory.path}/dualaudtemporary.mp4'; // Path to save the resulting video file
-
-      final arguments = [
-        '-y',
-        '-i',
-        videoPath,
-        '-i',
-        audioPath,
-        '-filter_complex',
-        '[0:a]volume=1.0[a1];[1:a]volume=1.0[a2];[a1][a2]amix=inputs=2:duration=first[aout]',
-        '-map',
-        '0:v',
-        '-map',
-        '[aout]',
-        '-c:v',
-        'copy',
-        '-c:a',
-        'aac',
-        '-strict',
-        'experimental',
-        outputPath
-      ];
-
-      Session session = await FFmpegKit.executeWithArguments(arguments);
-      ReturnCode? variable = await session.getReturnCode();
-
-      if (variable!.isValueSuccess()) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Audio Success")));
-        globalAudiofilePath = audioFile!.path;
-        print('Custom audio added successfully');
-        if (filterFlag == -1) {
-          toSavePath = outputPath;
-        } else {
-          filteredToSavePath = outputPath;
-        }
-        globalAudiofilePath = audioPath;
-
-        audioLoading = false;
-        _controller = VideoEditorController.file(File(outputPath),
-            minDuration: const Duration(seconds: 1),
-            maxDuration: Duration(seconds: widget.videoDuration + 2));
-        _controller
-            .initialize(aspectRatio: aspectratio)
-            .then((_) => setState(() {
-                  audioPicked = true;
-                }));
-      } else {
-        setState(() {
-          audioLoading = false;
-        });
-        print('Dual Audio Failed');
-        final List<Log> info = await session.getAllLogs();
-        for (int i = 0; i < info.length; i++) {
-          print(info[i].getMessage());
-        }
-      }
-    } catch (e) {
-      setState(() {
-        audioLoading = false;
-      });
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Error Loading File')));
-      print('Error picking files: $e');
-    }
-  }
 
   Future<void> removeFilter(
       String receivedFilterVidPath, int filterNumber) async {
@@ -994,14 +1007,12 @@ class _VideoEditorState extends State<VideoEditor> {
       incomingVidPath,
       '-vf',
       'scale=720:1280',
-      '-preset',
-      'medium',
-      '-crf',
-      '23',
+
       '-c:a',
       'aac',
       '${directory.path}/scale-temporary.mp4'
     ];
+
     await FFmpegKit.executeWithArguments(arguments).then((session) async {
       ReturnCode? variable = await session.getReturnCode();
 
@@ -1034,8 +1045,10 @@ class _VideoEditorState extends State<VideoEditor> {
               }));
         });
       } else {
+
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text("Some Error Occurred")));
+        Navigator.pop(context);
         List<Log> errors = await session.getAllLogs();
         for (int j = 0; j < errors.length; j++) {
           print(errors[j].getMessage());
@@ -1053,7 +1066,6 @@ class _VideoEditorState extends State<VideoEditor> {
           // Get the current theme data
           final theme = Theme.of(context);
 
-
           // Determine if the current theme is dark or light
           final isDarkMode = theme.brightness == Brightness.dark;
           return AlertDialog(
@@ -1066,16 +1078,15 @@ class _VideoEditorState extends State<VideoEditor> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextFormField(
-                    controller: imgVidController,
-                    style: TextStyle(color: Colors.black87),
+                      controller: imgVidController,
+                      style: const TextStyle(color: Colors.black87),
                       decoration: const InputDecoration(
-                          filled: true,
-                          fillColor: Colors.white,
-                          hintText: 'Text to apply',
-                          hintStyle:  TextStyle(
-                              color: Colors.grey, fontWeight: FontWeight.w100),
-
-                          )),
+                        filled: true,
+                        fillColor: Colors.white,
+                        hintText: 'Text to apply',
+                        hintStyle: TextStyle(
+                            color: Colors.grey, fontWeight: FontWeight.w100),
+                      )),
                   const SizedBox(height: 20),
                   SizedBox(
                     height: 40,
@@ -1083,8 +1094,7 @@ class _VideoEditorState extends State<VideoEditor> {
                       child: DropdownButton(
                         value: font,
                         hint: const Text('Font'),
-                        items: fonts
-                            .map((String value) {
+                        items: fonts.map((String value) {
                           return DropdownMenuItem(
                             value: value,
                             child: Text(value),
@@ -1119,17 +1129,19 @@ class _VideoEditorState extends State<VideoEditor> {
                             log('fontSize : ${fontSize}');
                             Navigator.pop(context);
                             showTextOverlayDialog(context);
-
                           });
                         },
                       ),
                     ),
                   ),
-                  const SizedBox(height:20),
+                  const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      Container(height : 40,width:40,color:colorMap[selectedColor]),
+                      Container(
+                          height: 40,
+                          width: 40,
+                          color: colorMap[selectedColor]),
                       SizedBox(
                         height: 40,
                         child: Center(
@@ -1148,7 +1160,6 @@ class _VideoEditorState extends State<VideoEditor> {
                                 log('fontSize : ${fontSize}');
                                 Navigator.pop(context);
                                 showTextOverlayDialog(context);
-
                               });
                             },
                           ),
@@ -1156,40 +1167,67 @@ class _VideoEditorState extends State<VideoEditor> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20,),
-                  Center(child: ElevatedButton(onPressed: () async {
-                    String textdonepath = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => VideoOverlayWidget(
-                              editingVidPath: filterFlag == -1
-                                  ? toSavePath
-                                  : filteredToSavePath,
-                              text: imgVidController.text,
-                              textStyle: TextStyle(fontFamily: font,fontSize: double.parse(fontSize),color: colorMap[selectedColor]),
-                            )));
-                    if (filterFlag == -1) {
-                      toSavePath = textdonepath;
-                    } else {
-                      filteredToSavePath = textdonepath;
-                    }
-                    setState(() {
-                      Navigator.pop(context);
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  Center(
+                      child: ElevatedButton(
+                          onPressed: () async {
+                            String textdonepath = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => VideoOverlayWidget(
+                                          editingVidPath: filterFlag == -1
+                                              ? toSavePath
+                                              : filteredToSavePath,
+                                          text: imgVidController.text,
+                                          textStyle: TextStyle(
+                                              fontFamily: font,
+                                              fontSize: double.parse(fontSize),
+                                              color: colorMap[selectedColor]),
+                                        )));
+                            if (filterFlag == -1) {
+                              toSavePath = textdonepath;
+                            } else {
+                              filteredToSavePath = textdonepath;
+                            }
+                            setState(() {
+                              Navigator.pop(context);
 
-                      _controller = VideoEditorController.file(
-                          File(textdonepath),
-                          minDuration: const Duration(seconds: 1),
-                          maxDuration: Duration(
-                              seconds: widget.videoDuration + 2));
-                      _controller
-                          .initialize(aspectRatio: aspectratio)
-                          .then((value) => setState(() {}));
-                    });
-                  },child :  (const Text('Apply'))))
+                              _controller = VideoEditorController.file(
+                                  File(textdonepath),
+                                  minDuration: const Duration(seconds: 1),
+                                  maxDuration: Duration(
+                                      seconds: widget.videoDuration + 2));
+                              _controller
+                                  .initialize(aspectRatio: aspectratio)
+                                  .then((value) => setState(() {}));
+                            });
+                          },
+                          child: (const Text('Apply'))))
                 ],
               ),
             ),
+          );
+        });
+  }
 
+  void showAudioOverlayDialog(BuildContext context, String audioFile) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          File audio = File(audioFile);
+          Trimmer _trimmer = Trimmer();
+          _trimmer.loadAudio(audioFile: audio);
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            title: const Text('Audio Adjustments'),
+            content: Column(
+              children: [
+                TrimViewer(trimmer: _trimmer),
+                ElevatedButton(onPressed: () {}, child: const Text("Trim"))
+              ],
+            ),
           );
         });
   }

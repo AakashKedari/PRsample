@@ -59,10 +59,18 @@ android {
             signingConfig signingConfigs.debug
         }
     }
+
+    configurations {
+        all { // You should exclude one of them not both of them
+            exclude group: "com.arthenica.ffmpegkit.Abi", module: "jetified-ffmpeg-kit-full-6.0-2-runtime"
+        }
+    }
 }
 
 flutter {
     source '../..'
 }
 
-dependencies {}
+dependencies {
+
+}
