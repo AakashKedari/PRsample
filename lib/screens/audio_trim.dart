@@ -16,8 +16,8 @@ import '../audio_trimmer/trim_area_properties.dart';
 import '../audio_trimmer/trim_editor_properties.dart';
 import '../audio_trimmer/trim_viewer.dart';
 import '../audio_trimmer/trimmer.dart';
-import '../utils/duration_style.dart';
-import 'audio_trimmer_view.dart';
+import '../audio_trimmer/duration_style.dart';
+import 'audio_trimmer_screen.dart';
 
 class AudioSelector extends StatefulWidget {
   final bool isCollage;

@@ -4,13 +4,13 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
-import '../../utils/duration_style.dart';
-import '../../utils/editor_drag_type.dart';
+import 'duration_style.dart';
+import 'editor_drag_type.dart';
 
-import '../audio_trimmer/trim_area_properties.dart';
-import '../audio_trimmer/trim_editor_painter.dart';
-import '../audio_trimmer/trim_editor_properties.dart';
-import '../audio_trimmer/trimmer.dart';
+import 'trim_area_properties.dart';
+import 'trim_editor_painter.dart';
+import 'trim_editor_properties.dart';
+import 'trimmer.dart';
 import 'fixed_bar_viewer.dart';
 
 class FixedTrimViewer extends StatefulWidget {

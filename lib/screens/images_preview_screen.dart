@@ -13,9 +13,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:loading_indicator/loading_indicator.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:prsample/screens/selectfiles.dart';
+import 'package:prsample/screens/select_files_screen.dart';
 import 'package:prsample/screens/video_editor_screen.dart';
-import '../filters.dart';
+import '../utils/filters.dart';
 
 class ImageTimer extends StatefulWidget {
   final List<XFile> ximages;

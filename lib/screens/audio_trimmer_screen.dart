@@ -4,7 +4,7 @@ import '../audio_trimmer/trim_area_properties.dart';
 import '../audio_trimmer/trim_editor_properties.dart';
 import '../audio_trimmer/trim_viewer.dart';
 import '../audio_trimmer/trimmer.dart';
-import '../utils/duration_style.dart';
+import '../audio_trimmer/duration_style.dart';
 
 class AudioTrimmerView extends StatefulWidget {
   final int time;
@@ -51,6 +51,8 @@ class _AudioTrimmerViewState extends State<AudioTrimmerView> {
       endValue: _endValue,
       audioFileName: DateTime.now().millisecondsSinceEpoch.toString(),
       onSave: (savePath) {
+        /// On pressing the Button, the path of the edited video is returned to
+        /// Video_Editor_Screen
         Navigator.pop(context,savePath);
         setState(() {
           _progressVisibility = false;

@@ -2,8 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:prsample/audio_trimmer/trim_area_properties.dart';
 import 'package:prsample/audio_trimmer/trimmer.dart';
-import 'package:prsample/utils/duration_style.dart';
-import 'package:prsample/utils/fixed_trim_viewer.dart';
+import 'package:prsample/audio_trimmer/duration_style.dart';
+import 'package:prsample/audio_trimmer/fixed_trim_viewer.dart';
 import 'trim_editor_properties.dart';
 
 class TrimViewer extends StatefulWidget {

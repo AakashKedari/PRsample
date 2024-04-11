@@ -3,8 +3,8 @@ import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:prsample/screens/selectfiles.dart';
-import '../colors.dart';
+import 'package:prsample/screens/select_files_screen.dart';
+import '../utils/colors.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({

@@ -8,8 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:prsample/screens/cachedVideos.dart';
-import 'package:prsample/screens/image_time_screen.dart';
+import 'package:prsample/screens/saved_edited_reels_screen.dart';
+import 'package:prsample/screens/images_preview_screen.dart';
 import 'package:prsample/screens/video_editor_screen.dart';
 
 class SelectImageScreen extends StatefulWidget {

@@ -14,7 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loading_indicator/loading_indicator.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:prsample/constants.dart';
+import 'package:prsample/utils/constants.dart';
 import 'package:prsample/customWidgets/loading_indicators.dart';
 import 'package:video_player/video_player.dart';
 

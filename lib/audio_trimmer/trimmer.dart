@@ -13,8 +13,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 
-import '../utils/file_formats.dart';
-import '../utils/storage_dir.dart';
+import 'file_formats.dart';
+import 'storage_dir.dart';
 
 enum TrimmerEvent { initialized }
 

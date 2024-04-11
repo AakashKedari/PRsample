@@ -15,12 +15,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:loading_indicator/loading_indicator.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:prsample/constants.dart';
+import 'package:prsample/utils/constants.dart';
 import 'package:prsample/customWidgets/loading_indicators.dart';
-import 'package:prsample/filters.dart';
-import 'package:prsample/screens/audio_trimmer_view.dart';
-import 'package:prsample/screens/drag_screen.dart';
-import 'package:prsample/screens/selectfiles.dart';
+import 'package:prsample/utils/filters.dart';
+import 'package:prsample/screens/audio_trimmer_screen.dart';
+import 'package:prsample/screens/text_drag_screen.dart';
+import 'package:prsample/screens/select_files_screen.dart';
 import 'package:video_editor/video_editor.dart';
 
 import '../audio_trimmer/trim_viewer.dart';
